@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "uso": "Los campos fotografía, crédito, carácter real/referencial y fuente pueden modificarse sin editar visor.js.",
+  "fotos": {
+    "Laguna de Aculeo": {
+      "archivo": "imagenes/hitos/laguna_aculeo.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Fotografía aportada para el visor turístico"
+    },
+    "Estero Pintué": {
+      "archivo": "imagenes/hitos/estero_pintue.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Fotografía del Estero Pintué"
+    },
+    "Estación de Trenes Hospital": {
+      "archivo": "imagenes/hitos/estacion_hospital.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Fotografía de Estación Hospital"
+    },
+    "Estación de Trenes Paine": {
+      "archivo": "imagenes/hitos/estacion_paine.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Fotografía de Estación Paine"
+    },
+    "Estadio Municipal Tricolor": {
+      "archivo": "imagenes/hitos/estadio_tricolor.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Celebración del Festival de la Sandía en el Estadio Municipal Tricolor"
+    },
+    "Municipalidad de Paine": {
+      "archivo": "imagenes/hitos/municipalidad.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Fotografía aérea de la Municipalidad de Paine"
+    }
+  },
+  "ejemplo_futuro": {
+    "Estero Peralillo": {
+      "archivo": "imagenes/hitos/estero_peralillo.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Crédito fotográfico pendiente"
+    }
+  }
+}
