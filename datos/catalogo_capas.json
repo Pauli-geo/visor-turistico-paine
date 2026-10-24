@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "fecha": "2026-10-24",
-  "nota": "Los recuentos corresponden a antecedentes de trabajo y no equivalen a validación normativa. Pendiente_carga indica que el archivo fuente existe en la carpeta de trabajo, pero aún no se publica en GitHub.",
+  "nota": "Capas y fichas recuperadas de la V2.0. Se publicó representación web en EPSG:4326 junto con fuentes técnicas EPSG:32719. Catastros sin geometrías verificadas aparecen en listados. Las ubicaciones y derechos de uso de imágenes deberán validarse para entrega municipal.",
   "capas": [
     {
       "id": "areas_urbanas",
@@ -10,11 +10,12 @@
       "geometria": "Polygon",
       "registros_reportados": 6,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/01_areas_urbanas_prc.geojson"
     },
     {
       "id": "vialidad",
@@ -23,11 +24,12 @@
       "geometria": "LineString",
       "registros_reportados": 119,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/06_red_vial_principal.geojson"
     },
     {
       "id": "hidrografia",
@@ -36,11 +38,12 @@
       "geometria": "LineString",
       "registros_reportados": 426,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/20_red_hidrografica_paine_y_entorno.geojson"
     },
     {
       "id": "esteros",
@@ -49,11 +52,12 @@
       "geometria": "LineString",
       "registros_reportados": 56,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/21_esteros_y_rios_destacados.geojson"
     },
     {
       "id": "ferrocarril",
@@ -62,11 +66,12 @@
       "geometria": "LineString",
       "registros_reportados": 10,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/22_red_ferroviaria_paine_y_entorno.geojson"
     },
     {
       "id": "humedal",
@@ -75,11 +80,12 @@
       "geometria": "Polygon",
       "registros_reportados": 1,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/15_humedal_urbano_delimitacion_completa.geojson"
     },
     {
       "id": "parques_prms",
@@ -88,11 +94,12 @@
       "geometria": "Polygon",
       "registros_reportados": 8,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/02_parques_prms.geojson"
     },
     {
       "id": "atractivos",
@@ -101,7 +108,7 @@
       "geometria": "Point",
       "registros_reportados": 21,
       "responsable": "Oficina de Turismo",
-      "estado_publicacion": "publicado_provisional",
+      "estado_publicacion": "fichas_editables_publicadas",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
@@ -114,11 +121,12 @@
       "geometria": "Point",
       "registros_reportados": 36,
       "responsable": "Asesoría Urbana",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "catalogo_publicado_geocodificacion_pendiente",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/24_patrimonio_arquitectonico_2013.geojson"
     },
     {
       "id": "catastro_turismo",
@@ -127,11 +135,12 @@
       "geometria": "Point",
       "registros_reportados": 83,
       "responsable": "Oficina de Turismo",
-      "estado_publicacion": "pendiente_carga",
+      "estado_publicacion": "catalogo_publicado_geocodificacion_pendiente",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/25_catastro_turistico_2025.geojson"
     },
     {
       "id": "alojamientos",
@@ -140,11 +149,26 @@
       "geometria": "Registro",
       "registros_reportados": 11,
       "responsable": "Oficina de Turismo",
-      "estado_publicacion": "pendiente_geocodificacion",
+      "estado_publicacion": "catalogo_publicado_geocodificacion_pendiente",
       "crs_web": "EPSG:4326",
       "crs_maestro": "EPSG:32719",
       "fecha_validacion": null,
-      "fuente_normativa": null
+      "fuente_normativa": null,
+      "ruta_maestra": "geojson_32719/26_alojamientos_2025.geojson"
+    },
+    {
+      "id": "plaza_armas",
+      "nombre": "Plaza de Armas de Paine / proyecto de mejoramiento integral",
+      "archivo_origen": "29-Mejoramiento integral Plaza de Armas de Paine centro.geojson",
+      "geometria": "Polygon",
+      "registros_reportados": 1,
+      "responsable": "Asesoría Urbana",
+      "estado_publicacion": "capa_web_y_fuente_tecnica_publicadas",
+      "ruta_maestra": "datos/originales/plaza_armas_paine_EPSG32719.geojson",
+      "crs_web": "EPSG:4326",
+      "crs_maestro": "EPSG:32719",
+      "fecha_validacion": null,
+      "fuente_normativa": "Polígono del proyecto, no acreditación de deslindes"
     }
   ]
 }
