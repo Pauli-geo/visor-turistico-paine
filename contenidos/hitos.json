@@ -37,7 +37,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-reserva-natural-altos-de-cantillana",
@@ -46,7 +48,7 @@
       "lat": -33.8943,
       "lon": -70.9585,
       "descripcion_breve": "Paisajes, cerros y ecosistemas de la cordillera de la Costa.",
-      "relato": "",
+      "relato": "Más allá del valle, Cantillana despliega cerros y bosque nativo. Sus senderos invitan a conocer una naturaleza que acompaña la historia rural de Paine.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -55,7 +57,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-acceso-oficial-altos-de-cantillana",
@@ -64,7 +68,7 @@
       "lat": -33.86854,
       "lon": -70.92234,
       "descripcion_breve": "Acceso asociado a los senderos de Altos de Cantillana.",
-      "relato": "",
+      "relato": "Desde este acceso, la cordillera de la Costa abre sus puertas a quien busca caminar entre paisajes, silencio y biodiversidad. Consulta siempre las condiciones de visita.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -73,7 +77,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-reserva-nacional-el-ajial",
@@ -82,7 +88,7 @@
       "lat": -33.864672,
       "lon": -70.562039,
       "descripcion_breve": "Sector de interés natural y precordillerano.",
-      "relato": "",
+      "relato": "La precordillera guarda rincones de aire limpio y quebradas que recuerdan el valor del agua. Descubre El Ajial y su entorno con respeto por la naturaleza.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -91,7 +97,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-tranque-chada",
@@ -100,7 +108,7 @@
       "lat": -33.902509,
       "lon": -70.649364,
       "descripcion_breve": "Agua y paisaje rural del sector Chada.",
-      "relato": "",
+      "relato": "Entre los caminos campesinos de Chada, el paisaje del tranque refleja la relación entre el agua y la vida productiva del valle.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -109,7 +117,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-parque-la-vacada",
@@ -118,7 +128,7 @@
       "lat": -33.82891,
       "lon": -70.59121,
       "descripcion_breve": "Paisaje natural en el sector oriental de Paine.",
-      "relato": "",
+      "relato": "Hacia el oriente, las montañas dan forma al horizonte de Paine. La Vacada invita a mirar de cerca el encuentro de la vida rural con la precordillera.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -127,7 +137,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-estadio-municipal-tricolor",
@@ -145,7 +157,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-municipalidad-de-paine",
@@ -163,7 +177,8 @@
       "fuente": "Mapa OSM (way 112427159); Consejo para la Transparencia, Av. General Baquedano 490; archivo turístico municipal",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion"
     },
     {
       "id": "TUR-centro-cultural-de-paine",
@@ -172,7 +187,7 @@
       "lat": -33.807943,
       "lon": -70.741053,
       "descripcion_breve": "Espacio de cultura y encuentro de la comunidad.",
-      "relato": "",
+      "relato": "En el centro de la comuna, las artes y las historias locales encuentran un espacio de encuentro. Acércate a descubrir las expresiones culturales paininas.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -181,7 +196,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-memorial-paine",
@@ -190,7 +207,7 @@
       "lat": -33.803896,
       "lon": -70.708217,
       "descripcion_breve": "Sitio de memoria y derechos humanos.",
-      "relato": "",
+      "relato": "Aquí la memoria permanece viva. Una visita invita a escuchar, reflexionar y honrar las historias de quienes forman parte de la memoria de Paine.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -199,7 +216,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-santuario-de-la-naturaleza-el-ajial",
@@ -208,7 +227,7 @@
       "lat": -33.864672,
       "lon": -70.562039,
       "descripcion_breve": "Área bajo protección ambiental.",
-      "relato": "",
+      "relato": "Las quebradas y laderas de El Ajial resguardan vida silvestre y paisajes precordilleranos. Conocerlos es también una invitación a cuidarlos.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -217,7 +236,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-santuario-altos-de-cantillana-y-horcon-de-piedra",
@@ -226,7 +247,7 @@
       "lat": -33.89709,
       "lon": -70.9965,
       "descripcion_breve": "Patrimonio natural de la cordillera de la Costa.",
-      "relato": "",
+      "relato": "Cantillana alza sus cumbres sobre los campos, guardando ecosistemas únicos de Chile central. Su belleza merece una visita responsable y respetuosa.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -235,7 +256,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-iglesia-del-transito-paine",
@@ -253,7 +276,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-casa-esquina-del-ex-fundo-rangue",
@@ -262,7 +287,7 @@
       "lat": -33.844514,
       "lon": -70.950689,
       "descripcion_breve": "Inmueble de interés patrimonial del antiguo fundo Rangue.",
-      "relato": "",
+      "relato": "En Rangue, la arquitectura rural sigue relatando la vida de antiguos fundos. Cada muro y corredor es una puerta a la memoria del valle.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -271,7 +296,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-iglesia-del-ex-fundo-rangue",
@@ -280,7 +307,7 @@
       "lat": -33.847377,
       "lon": -70.947676,
       "descripcion_breve": "Memoria histórica del paisaje de Rangue.",
-      "relato": "",
+      "relato": "Entre las huellas del antiguo fundo, esta iglesia recuerda encuentros, celebraciones y tradiciones que han acompañado a generaciones.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -289,7 +316,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-estacion-de-trenes-paine",
@@ -307,7 +336,8 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion"
     },
     {
       "id": "TUR-estacion-de-trenes-hospital",
@@ -325,7 +355,8 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion"
     },
     {
       "id": "TUR-estacion-central-santiago",
@@ -334,7 +365,7 @@
       "lat": -33.4506,
       "lon": -70.6899,
       "descripcion_breve": "Conexión histórica del ferrocarril desde Paine hacia Santiago.",
-      "relato": "",
+      "relato": "Las vías conducen desde el corazón de Santiago hacia los paisajes de Paine. El viaje en tren es también una manera de recorrer la historia del valle.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -343,7 +374,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-vina-perez-cruz",
@@ -352,7 +385,7 @@
       "lat": -33.84182,
       "lon": -70.61896,
       "descripcion_breve": "Viña del valle de Paine.",
-      "relato": "",
+      "relato": "En el paisaje vitivinícola de Paine, las hileras de parras cuentan historias de trabajo y estaciones. Descubre las viñas del valle con visitas coordinadas.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -361,7 +394,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-vina-antiyal",
@@ -370,7 +405,7 @@
       "lat": -33.85957,
       "lon": -70.62188,
       "descripcion_breve": "Viña del entorno rural de Paine.",
-      "relato": "",
+      "relato": "Bajo el cielo de Paine, la tierra y la vid expresan otra forma de conocer el valle. Un recorrido por sus vinos acerca la cultura rural del territorio.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -379,7 +414,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     },
     {
       "id": "TUR-vina-lof",
@@ -388,7 +425,7 @@
       "lat": -33.781665,
       "lon": -70.657997,
       "descripcion_breve": "Viñedo y alojamiento turístico del territorio comunal.",
-      "relato": "",
+      "relato": "Entre viñedos y caminos de campo, descubre una experiencia que invita a disfrutar los paisajes del valle y su tradición vitivinícola.",
       "sector": "",
       "direccion": "",
       "sitio_web": "",
@@ -397,7 +434,9 @@
       "fuente": "Visor de trabajo municipal V2; verificar con catastro fuente",
       "estado_validacion": "pendiente",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-24",
+      "estado_multimedia": "fotografia_pendiente_de_publicacion",
+      "estado_enlace": "pendiente_verificacion"
     }
   ]
 }
