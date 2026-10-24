@@ -34,3 +34,19 @@ Responsabilidades propuestas: Oficina de Turismo revisa fichas, horarios, servic
 ## 6. Advertencia sobre el estado actual
 
 El primer mapa público utiliza 21 puntos de la versión web de trabajo y servicios de mapa externos. Las 6 áreas urbanas, 119 vías, 426 trazados hidrográficos, 10 líneas ferroviarias y humedal se identificaron en los archivos fuente originales, pero todavía no se han transferido todos esos GeoJSON al repositorio GitHub. Este documento no certifica su vigencia normativa.
+
+
+## Fotografías y rutas: actualización sencilla
+
+El archivo **contenidos/fotografias_hitos.json** administra imágenes por el nombre del hito. Cuando se reciba una fotografía nueva:
+1. Confirmar autoría, permiso de publicación y crédito de la imagen con Turismo.
+2. Agregar el archivo en **imagenes/hitos/** con nombre descriptivo, preferentemente WebP o JPG.
+3. Abrir **contenidos/fotografias_hitos.json**, añadir o modificar el registro del nombre exacto del lugar con **archivo**, **tipo** y **nota**.
+4. Usar **tipo: "fotografia_del_lugar"** para material efectivamente tomado en el lugar. Una fotografía genérica de Paine debe quedar identificada expresamente como referencial.
+5. Guardar y recargar GitHub Pages: el visor lee este catálogo al iniciar, sin editar visor.js.
+
+Los puntos y polígonos georreferenciados muestran dos enlaces a Google Maps: **desde Estación Central de Santiago** y **desde Estación Paine**. Las rutas reales, tiempos y modos de viaje son calculados por el proveedor externo. Para polígonos o líneas se usa un punto orientativo de su geometría, que no garantiza ingreso público.
+
+La capa **datos/corredores_turisticos.geojson** representa cinco ejes con trazados simplificados: Ruta 5 Sur, Ruta 79 Acceso Sur, Camino Padre Hurtado (G-45-H), G-54 hacia Aculeo y un tramo de G-568 Peralillo–Valdivia de Paine. La continuidad completa de G-568 aún debe verificarse. Son ejes turísticos de referencia, nunca planos normativos ni sustitutos de navegación vial.
+
+**El límite comunal externo que se representaba incorrectamente se retiró.** Debe reponerse únicamente con la capa administrativa municipal georreferenciada en EPSG:4326 como **datos/limite_comunal_paine.geojson**, previa validación de procedencia. Las localidades censales 2024 y las seis áreas urbanas no sustituyen el límite administrativo.
