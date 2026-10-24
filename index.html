@@ -35,6 +35,31 @@ const response=await fetch('datos/visor_completo_2026.b64');if(!response.ok)thro
 const code=(await response.text()).trim();const compressed=Uint8Array.from(atob(code),c=>c.charCodeAt(0));
 const unzipped=new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
 window.VISOR_DATA=JSON.parse(await new Response(unzipped).text());
+try{
+ const responseMaster=await fetch('contenidos/hitos.json',{cache:'no-store'});
+ if(responseMaster.ok){
+  const master=await responseMaster.json(); const D=window.VISOR_DATA;
+  const layers=[D.hitos,D.culturales,D.estaciones,D.cmn,D.plaza];
+  const norm=s=>String(s||'').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').trim();
+  for(const item of master.hitos||[]){
+    let f=layers.flatMap(x=>x?.features||[]).find(x=>norm(x?.properties?.nombre||x?.properties?.NOMBRE)===norm(item.nombre));
+    if(!f&&Number.isFinite(item.lat)&&Number.isFinite(item.lon)&&item.nombre!=='Estación Central Santiago'){
+      f={type:'Feature',geometry:{type:'Point',coordinates:[item.lon,item.lat]},properties:{nombre:item.nombre,categoria:item.categoria,precision:'Ubicación de catastro pendiente de revisión'}};D.hitos.features.push(f);
+    }
+    if(!f)continue;
+    let p=f.properties||(f.properties={});
+    if(item.relato)p.descripcion=item.relato;
+    else if(item.descripcion_breve)p.descripcion=item.descripcion_breve;
+    if(item.direccion)p.direccion=item.direccion;
+    if(item.sitio_web)p.sitio_web=item.sitio_web;
+    if(item.foto_principal)p.foto=item.foto_principal;
+    if(item.foto_aclaracion)p.foto_aclaracion=item.foto_aclaracion;
+    if(item.fuente)p.fuente=item.fuente;
+    if(f.geometry?.type==='Point'&&Number.isFinite(item.lat)&&Number.isFinite(item.lon))f.geometry.coordinates=[item.lon,item.lat];
+  }
+ }
+}catch(e){console.warn('Se utilizarán las fichas de respaldo del visor:',e)}
+
 const photoParts=await Promise.all([0,1,2,3,4].map(async(i)=>{const r=await fetch('imagenes/fotos_v2_'+i+'.json');if(!r.ok)throw Error('No se pudieron cargar fotografías');return r.json()}));
 window.VISOR_ASSETS=Object.assign({},...photoParts);
 document.querySelectorAll('img[data-photo]').forEach(img=>{let uri=window.VISOR_ASSETS[img.dataset.photo];if(uri){img.src=uri}else{img.alt=img.alt+' (imagen pendiente)'}});
