@@ -437,6 +437,25 @@
       "fecha_actualizacion": "2026-10-24",
       "estado_multimedia": "fotografia_pendiente_de_publicacion",
       "estado_enlace": "pendiente_verificacion"
+    },
+    {
+      "id": "TUR-plaza-armas-paine",
+      "nombre": "Plaza de Armas de Paine",
+      "categoria": "Patrimonio y monumentos",
+      "lat": -33.8100957,
+      "lon": -70.7390977,
+      "descripcion_breve": "En el corazón de Paine, la plaza es un lugar para encontrarse, recordar y descubrir el ritmo cotidiano del pueblo.",
+      "relato": "Entre árboles, conversaciones y celebraciones, la Plaza de Armas recibe a quienes desean conocer la memoria cívica y la vida del centro painino.",
+      "sector": "Paine Centro",
+      "direccion": "Centro de Paine",
+      "sitio_web": "",
+      "foto_principal": "assets/municipalidad.jpg",
+      "foto_aclaracion": "Fotografía aérea del entorno municipal; imagen específica de la plaza pendiente.",
+      "galeria": [],
+      "fuente": "29-Mejoramiento integral Plaza de Armas de Paine centro.geojson; geometría de proyecto EPSG:32719",
+      "estado_validacion": "geom_proyecto_validar_deslindes",
+      "estado_publicacion": "en_revision",
+      "fecha_actualizacion": "2026-10-24"
     }
   ]
 }
