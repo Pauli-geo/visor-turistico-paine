@@ -4,28 +4,63 @@ const safe=s=>String(s??'').replace(/[&<>"']/g,a=>({'&':'&amp;','<':'&lt;','>':'
 const nombreCorregido=v=>String(v||'').replace(/\bHuelquen\b/gi,'Huelquén').replace(/\bEl Transito\b/gi,'El Tránsito').replace(/\bPintue\b/gi,'Pintué');const n=f=>nombreCorregido(f.properties?.nombre||f.properties?.nombre_corto||f.properties?.LOCALIDAD||f.properties?.NOMBRE||f.properties?.NOMBRE_CAL||'Hito de Paine');
 const hav=(a,b)=>{let rad=Math.PI/180,da=(a[0]-b[0])*rad,db=(a[1]-b[1])*rad,x=Math.sin(da/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(db/2)**2;return (2*6371*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1)};
 const coords=f=>f.geometry?.type==='Point'?[f.geometry.coordinates[1],f.geometry.coordinates[0]]:null;
-const pics={'Estación de Trenes Paine':'assets/estacion_paine.jpg','Estación de Trenes Hospital':'assets/estacion_hospital.jpg','Laguna de Aculeo':'assets/laguna_aculeo_real.jpg','Municipalidad de Paine':'assets/municipalidad.jpg','Estadio Municipal Tricolor':'assets/estadio_tricolor_festival.jpg','Estero Pintue':'assets/estero_pintue_real.jpg'};
-function popup(f){
- const p=f.properties||{},name=n(f),c=coords(f);
- let original=p.foto||pics[name]||'';
- const realPhoto=(window.VISOR_ASSETS||{})[original]||(window.VISOR_ASSETS||{})[pics[name]||'']||'';
- const image=realPhoto?'<img class="ficha-foto" src="'+safe(realPhoto)+'" alt="Fotografía de '+safe(name)+'" loading="lazy">':'<div class="ficha-pendiente">Fotografía de este lugar pendiente de incorporar</div>';
- const story=p.relato||p.descripcion||p.especialidad||p.observaciones||(p.LOCALIDAD?'Esta localidad forma parte del diverso paisaje de Paine. Sus habitantes, hogares y caminos conforman una historia que merece ser conocida y respetada.':'Descubre las historias, el paisaje y los encuentros que dan vida a este rincón de Paine.');
- let html='<div class="ficha">'+image+'<h3>'+safe(name)+'</h3><div class="meta">'+safe(p.categoria||p.categoria_proteccion||p.localidad||'Territorio de Paine')+'</div><p>'+safe(story)+'</p>';
- if(p.descripcion&&p.relato&&p.descripcion!==p.relato)html+='<p>'+safe(p.descripcion)+'</p>';if(p.LOCALIDAD){const form=v=>Number.isFinite(Number(v))?new Intl.NumberFormat('es-CL').format(v):'—';html+='<p class="meta"><b>Tipo de localidad:</b> '+safe(p.AREA_C||'')+' · <b>Población 2024:</b> '+form(p.n_per)+' habitantes</p><p class="meta"><b>Hombres:</b> '+form(p.n_hombres)+' · <b>Mujeres:</b> '+form(p.n_mujeres)+' · <b>Hogares:</b> '+form(p.n_hog)+'</p><p class="meta"><b>Fuente:</b> Censo de Población y Vivienda 2024 · cartografía de localidades</p>';}
- if(p.foto_aclaracion)html+='<p class="meta">'+safe(p.foto_aclaracion)+'</p>';
- if(p.direccion)html+='<p class="meta"><b>Ubicación:</b> '+safe(p.direccion)+'</p>';
+const pics={
+'Estación de Trenes Paine':'imagenes/hitos/estacion_paine.webp',
+'Estación de Trenes Hospital':'imagenes/hitos/estacion_hospital.webp',
+'Laguna de Aculeo':'imagenes/hitos/laguna_aculeo.webp',
+'Municipalidad de Paine':'imagenes/hitos/municipalidad.webp',
+'Estadio Municipal Tricolor':'imagenes/hitos/estadio_tricolor.webp',
+'Estero Pintué':'imagenes/hitos/estero_pintue.webp'
+};
+const originCentral='-33.4506,-70.6899',originPaine='-33.81625,-70.7437';
+const fotoReferencia=(name,p)=>{
+ const assets=window.VISOR_ASSETS||{};
+ if(pics[name])return {url:pics[name],note:''};
+ const original=p.foto||'';
+ if(original&&assets[original])return {url:assets[original],note:p.foto_aclaracion||''};
+ if(/pintué/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:'Fotografía del Estero Pintué'};
+ if(/laguna|aculeo|humedal|cantillana/i.test(name))return {url:'imagenes/hitos/laguna_aculeo.webp',note:'Fotografía de la Laguna de Aculeo; imagen referencial cuando el sitio seleccionado es otro'};
+ if(/río|estero|cauce|agua|peralillo|abrantes/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:'Fotografía del Estero Pintué utilizada como imagen referencial del paisaje hídrico'};
+ if(/tren|ferrovia|estación/i.test(name))return {url:'imagenes/hitos/estacion_paine.webp',note:'Fotografía de Estación Paine utilizada como imagen ferroviaria referencial'};
+ if(/ruta|camino|acceso|g-54|g-45|g-568|valle/i.test(name))return {url:'imagenes/hitos/laguna_aculeo.webp',note:'Paisaje de Aculeo utilizado como fotografía referencial del entorno de Paine'};
+ return {url:'imagenes/hitos/municipalidad.webp',note:'Fotografía aérea de Paine utilizada como referencia visual; no representa necesariamente este lugar'};
+};
+const relatoDe=(p,name)=>{
+ if(p.relato)return p.relato;
+ if(p.LOCALIDAD)return 'Cada localidad guarda huellas de la vida rural y de quienes construyen el presente de Paine. Recorre '+name+' y descubre los caminos y paisajes que la rodean.';
+ if(/Estero|Río/i.test(name))return 'Escucha el rumor del agua y sigue la huella de '+name+'. Entre cerros, campos y quebradas, este cauce nos invita a conocer el territorio y a cuidar sus ecosistemas.';
+ if(/ferroviaria|tren/i.test(String(p.categoria||'')))return 'Sigue las vías que unieron al valle con Santiago: los viajes, las cosechas y las despedidas dibujaron una historia que aún puedes recorrer.';
+ if(/camino|ruta|acceso/i.test(name))return 'Toma este camino para descubrir los paisajes, los oficios y la memoria rural de Paine. Cada curva abre una historia distinta del valle.';
+ if(/Patrimonio/i.test(String(p.categoria||'')))return 'Las casas y construcciones del pasado narran historias de trabajo y comunidad. Descubre su memoria respetando los espacios privados y las condiciones de visita.';
+ if(/alojamiento/i.test(String(p.categoria||'')))return 'Haz una pausa en Paine y permite que sus paisajes marquen el ritmo de tu viaje; consulta previamente las condiciones de atención.';
+ return 'Ven a descubrir '+name+': un lugar donde el paisaje y la historia de Paine se encuentran y esperan tu visita.';
+};
+function popup(f,ly){
+ const p=f.properties||{},name=n(f);
+ let c=coords(f);
+ if(!c&&ly&&typeof ly.getBounds==='function'){const b=ly.getBounds();if(b&&b.isValid()){const ctr=b.getCenter();c=[ctr.lat,ctr.lng]}}
+ const photo=fotoReferencia(name,p);
+ const photoHtml=photo.url?'<img class="ficha-foto" src="'+safe(photo.url)+'" alt="Imagen turística: '+safe(name)+'" loading="lazy" onerror="this.style.display='+"'none'"+'">':'';
+ let html='<div class="ficha">'+photoHtml+'<h3>'+safe(name)+'</h3><div class="meta">'+safe(p.categoria||p.categoria_proteccion||p.AREA_C||'Territorio de Paine')+'</div><p>'+safe(relatoDe(p,name))+'</p>';
+ if(photo.note)html+='<p class="meta"><i>'+safe(photo.note)+'</i></p>';
+ if(p.descripcion&&p.descripcion!==p.relato)html+='<p>'+safe(p.descripcion)+'</p>';
+ if(p.observaciones&&p.observaciones!==p.descripcion)html+='<p class="meta">'+safe(p.observaciones)+'</p>';
+ if(p.LOCALIDAD){const num=v=>Number.isFinite(Number(v))?new Intl.NumberFormat('es-CL').format(v):'—';html+='<p class="meta"><b>Censo 2024:</b> '+num(p.n_per)+' habitantes · '+num(p.n_hombres)+' hombres · '+num(p.n_mujeres)+' mujeres · '+num(p.n_hog)+' hogares</p>'}
+ if(p.direccion)html+='<p class="meta"><b>Dirección:</b> '+safe(p.direccion)+'</p>';
  if(p.fuente)html+='<p class="meta"><b>Fuente:</b> '+safe(p.fuente)+'</p>';
- if(c)html+='<p class="meta"><b>Distancias en línea recta:</b> Estación Paine '+hav(c,[-33.81625,-70.7437])+' km · Estación Central de Santiago '+hav(c,[-33.4506,-70.6899])+' km</p>';
- html+='<div class="buttonlinks">';
- if(c)html+='<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination='+c[0]+','+c[1]+'">Cómo llegar ↗</a>';
- if(/^https:\/\//.test(p.sitio_web||''))html+='<a href="'+safe(p.sitio_web)+'" target="_blank" rel="noopener">Más información ↗</a>';
- html+='</div>';
- if(p.precision||p.precision_geometrica)html+='<div class="meta">Ubicación: '+safe(p.precision||p.precision_geometrica)+'</div>';
+ if(p.precision||p.precision_geometrica)html+='<p class="meta"><b>Precisión:</b> '+safe(p.precision||p.precision_geometrica)+'</p>';
+ if(c){
+  html+='<p class="meta"><b>Distancias en línea recta:</b> Estación Paine '+hav(c,[-33.81625,-70.7437])+' km · Estación Central '+hav(c,[-33.4506,-70.6899])+' km. No son distancias de viaje.</p>';
+  const dest=c[0]+','+c[1];
+  html+='<div class="buttonlinks"><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&origin='+originCentral+'&destination='+dest+'">Desde Estación Central ↗</a><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&origin='+originPaine+'&destination='+dest+'">Desde Estación Paine ↗</a></div>';
+  if(f.geometry?.type!=='Point')html+='<p class="meta">Las indicaciones conducen a un punto orientativo de esta geometría. Verifica el acceso y no ingreses a predios privados.</p>';
+ }
+ const link=p.sitio_web||p.url_oficial||'';
+ if(/^https:\/\//.test(link))html+='<div class="buttonlinks"><a href="'+safe(link)+'" target="_blank" rel="noopener">Fuente / más información ↗</a></div>';
  return html+'</div>';
 }
 function selected(ly){if(selection&&selection.setStyle){try{selection.setStyle(selection._normalStyle||{})}catch{}}selection=ly;if(ly.setStyle){ly._normalStyle={color:ly.options.color,weight:ly.options.weight,fillColor:ly.options.fillColor,fillOpacity:ly.options.fillOpacity,radius:ly.options.radius};ly.setStyle({color:'#db2f89',weight:5,fillColor:'#fcbd3b',fillOpacity:0.6,radius:12})}let b=ly.getBounds?.();if(b&&b.isValid())map.flyToBounds(b.pad(.15),{maxZoom:15,duration:.6});else if(ly.getLatLng)map.flyTo(ly.getLatLng(),15,{duration:.6});}
-function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:point||'#932475',fillOpacity:1}),onEachFeature:(f,x)=>{x.bindPopup(popup(f),{maxWidth:330});x.on('click',()=>{selected(x);map.once('moveend',()=>x.openPopup());setTimeout(()=>x.openPopup(),350)})}});return l;}
+function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:point||'#932475',fillOpacity:1}),onEachFeature:(f,x)=>{x.bindPopup(()=>popup(f,x),{maxWidth:360});x.on('click',()=>{selected(x);setTimeout(()=>x.openPopup(),650)})}});return l;}
 function register(id,name,geo,style,color,visible,target,desc){let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};if(visible)layer.addTo(map);const d=document.getElementById(target);let label=document.createElement('label');label.className='layer';label.innerHTML='<input type="checkbox" '+(visible?'checked':'')+' aria-label="'+safe(name)+'"><span>'+safe(name)+(desc?'<div class="layer-desc">'+safe(desc)+'</div>':'')+'</span><button class="zoom" title="Ir a capa">⌖</button>';d.appendChild(label);let ck=label.querySelector('input');ck.addEventListener('change',()=>{if(ck.checked){layer.addTo(map);zoomLayer(layer)}else map.removeLayer(layer)});label.querySelector('button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();ck.checked=true;layer.addTo(map);zoomLayer(layer)});return layer;}
 function zoomLayer(layer){let bounds=layer.getBounds?.();if(bounds?.isValid()){map.flyToBounds(bounds.pad(.12),{duration:.7,maxZoom:14});}else document.getElementById('status').textContent='Este catálogo contiene registros sin coordenadas; consulta las fichas del panel para ubicarlos por su dirección.';}
 function filt(g,check){return {...g,features:g.features.filter(check)}};
@@ -35,9 +70,9 @@ register('metropolitan','Parques Metropolitanos · Plan Regulador Metropolitano 
 register('protection','Protección ecológica · Plan Regulador Metropolitano de Santiago',D.proteccion,{color:'#347554',weight:1.5,fillColor:'#4c9b65',fillOpacity:.12},null,false,'natureLayers');
 register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,true,'natureLayers');
 register('aguas','Ríos y esteros destacados',D.hidrografia,{color:'#218dbe',weight:2.6,opacity:.92},null,true,'natureLayers');
-register('rail','Paine y sus estaciones de tren · corredor a Estación Central',D.ferrocarril,{color:'#365275',weight:2,dashArray:'6,5',opacity:.85},null,true,'roadsLayers');
+register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,true,'roadsLayers');
 register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',true,'roadsLayers');
-register('valle','Ruta del Valle · Champa–Aculeo–Rangue',D.routes.valle,{color:'#dc8821',weight:5,opacity:.9},null,true,'roadsLayers');
+register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:'#dc8821',weight:5,opacity:.9},null,true,'roadsLayers');
 register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:'#9e42a7',weight:4,opacity:.9},null,true,'roadsLayers');
 register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',true,'attractionLayers');
 register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',true,'attractionLayers');
@@ -53,6 +88,16 @@ fetch('datos/localidades_censo_2024.geojson',{cache:'no-store'})
  .then(r=>r.ok?r.json():Promise.reject(Error('Capa de localidades no disponible')))
  .then(gj=>register('localidades','40 localidades · Censo 2024',gj,{color:'#2f826a',weight:2,fillColor:'#68b9a1',fillOpacity:.14},null,false,'localityLayers','Polígonos censales; no corresponden al límite comunal'))
  .catch(err=>{console.warn(err);document.getElementById('localityLayers').textContent='No fue posible cargar esta capa. Inténtalo nuevamente.'});
+
+fetch('datos/corredores_turisticos.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No se cargaron las rutas destacadas')))
+.then(g=>{
+ for(const f of g.features||[]){
+  const q=f.properties;
+  register('corridor-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:q.color||'#db6c25',weight:5,opacity:.95},null,true,'corridorLayers','Trazado simplificado de referencia');
+ }
+})
+.catch(err=>{console.warn(err);document.getElementById('corridorLayers').textContent='No fue posible cargar estas rutas. Recarga la página.'});
 const captions={'Paine Centro':'Entre la estación, las casonas y los encuentros cotidianos, el corazón de la comuna cuenta su historia.','Champa - Hospital':'La vida de campo en torno al río Angostura, donde el tren y las sandías acompañaron el paso de generaciones.','Pintue':'El valle de Aculeo a los pies del Cordón de Cantillana: la memoria del agua y el paisaje se encuentran aquí.','El Transito':'El camino hacia la precordillera abre puertas a antiguas haciendas, viñas y tradiciones.','Huelquen':'Huelquén enlaza los caminos de Padre Hurtado con la vida rural, las viñas y los cerros de El Ajial.','Chada':'El paso entre valles y montañas, una puerta de caminos y memorias de la Independencia.'};
 D.areas.features.forEach((f,i)=>{let name=nombreCorregido(f.properties.nombre_corto),id='urban'+i;let layer=lay({type:'FeatureCollection',features:[f]},{color:'#cb3e86',weight:3,fillColor:'#f9da81',fillOpacity:.16});layerMap[id]={layer,name};layer.addTo(map);let el=document.createElement('label');el.className='listing';el.innerHTML='<input type="checkbox" checked><div class="body"><strong>'+safe(name)+'</strong><small>'+safe(captions[name]||'Una localidad para recorrer y descubrir.')+'</small></div><button class="go" title="Ir al área urbana">↗</button>';document.getElementById('urbanList').appendChild(el);el.querySelector('input').onchange=e=>e.target.checked?layer.addTo(map):map.removeLayer(layer);const jump=()=>{layer.addTo(map);el.querySelector('input').checked=true;zoomLayer(layer);roads.addTo(map);layer.bringToFront()};el.querySelector('button').onclick=jump;el.querySelector('.body').onclick=jump;});
 // Additional verified road classes, selectable individually
