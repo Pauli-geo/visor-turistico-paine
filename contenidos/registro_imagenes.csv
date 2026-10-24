@@ -1,0 +1,5 @@
+id_imagen,id_hito,archivo,descripcion,autor_credito,fuente,permiso_publicacion,fecha_revision,estado
+IMG-001,TUR-estacion-de-trenes-paine,imagenes/hitos/TUR-estacion-de-trenes-paine/principal.jpg,Estación de Paine,,,,,pendiente
+IMG-002,TUR-estacion-de-trenes-hospital,imagenes/hitos/TUR-estacion-de-trenes-hospital/principal.jpg,Estación de Hospital,,,,,pendiente
+IMG-003,TUR-laguna-de-aculeo,imagenes/hitos/TUR-laguna-de-aculeo/principal.jpg,Laguna de Aculeo,,,,,pendiente
+IMG-004,TUR-estadio-municipal-tricolor,imagenes/hitos/TUR-estadio-municipal-tricolor/principal.jpg,Festival de la Sandía,,,,,pendiente
