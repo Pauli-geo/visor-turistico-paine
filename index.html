@@ -43,4 +43,31 @@ for(const key of Object.keys(colors)){groups[key]=L.layerGroup();const id={'Atra
 for(const [name,lat,lon,cat,desc] of records){let circle=L.circleMarker([lat,lon],{radius:8,color:'#fff',weight:2,fillColor:colors[cat],fillOpacity:.94});const dir='https://www.google.com/maps/dir/?api=1&destination='+lat+','+lon;circle.bindPopup('<strong>'+name+'</strong><p>'+desc+'</p><a href="'+dir+'" target="_blank" rel="noopener">Cómo llegar ↗</a>');circle.addTo(groups[cat]);markers[name]=circle}
 function focusName(name){let m=markers[name];if(!m)return;let cat=records.find(r=>r[0]===name)[3];if(!map.hasLayer(groups[cat]))groups[cat].addTo(map);map.setView(m.getLatLng(),14);m.openPopup();report()}
 function report(){document.getElementById('status').textContent='Mapa interactivo · '+Object.entries(groups).filter(([k,v])=>map.hasLayer(v)).length+' capas visibles · '+records.length+' lugares localizados'}report();
+
+/* Las fichas editables tienen prioridad sobre la copia de respaldo integrada. */
+fetch('contenidos/hitos.json',{cache:'no-store'})
+ .then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.json()})
+ .then(db=>{
+   if(!Array.isArray(db.hitos))throw new Error('Formato de fichas incorrecto');
+   for(const group of Object.values(groups))group.clearLayers();
+   for(const name of Object.keys(markers))delete markers[name];
+   records.length=0;
+   for(const h of db.hitos){
+     if(!Number.isFinite(h.lat)||!Number.isFinite(h.lon))continue;
+     const cat=h.categoria;
+     if(!groups[cat])continue;
+     records.push([h.nombre,h.lat,h.lon,cat,h.descripcion_breve||'']);
+     const marker=L.circleMarker([h.lat,h.lon],{radius:8,color:'#fff',weight:2,fillColor:colors[cat],fillOpacity:.94});
+     const content=document.createElement('div');
+     const title=document.createElement('strong');title.textContent=h.nombre;content.appendChild(title);
+     const description=document.createElement('p');description.textContent=h.descripcion_breve||'';content.appendChild(description);
+     if(h.relato){const story=document.createElement('p');story.textContent=h.relato;content.appendChild(story)}
+     if(h.foto_principal){const photo=document.createElement('img');photo.src=h.foto_principal;photo.style.maxWidth='230px';photo.alt=h.nombre;content.appendChild(photo)}
+     const direction=document.createElement('a');direction.href='https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lon;direction.target='_blank';direction.rel='noopener';direction.textContent='Cómo llegar ↗';content.appendChild(direction);
+     marker.bindPopup(content);marker.addTo(groups[cat]);markers[h.nombre]=marker;
+   }
+   report();
+   document.getElementById('status').textContent+=' · Fichas conectadas a la base maestra';
+ })
+ .catch(err=>{console.warn('No se pudieron cargar las fichas editables:',err);document.getElementById('status').textContent+=' · Base de respaldo activa'});
 </script></body></html>
