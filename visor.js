@@ -125,6 +125,56 @@ const kmzGrupos=[
   {key:'experiencias',cat:'Experiencias y eventos',label:'Experiencias y eventos',color:'#ca8945',defaultOn:false},
   {key:'comunidad',cat:'Patrimonio comunitario',label:'Patrimonio comunitario',color:'#527caf',defaultOn:false}
 ];
+
+// Índice de casos turísticos: explorar cada sitio sin activar de golpe sus categorías.
+const kmzById=new Map();let kmzSpotlight=null;
+window.abrirHitoKmz=id=>{
+ const f=kmzById.get(id);if(!f||f.geometry?.type!=='Point')return;
+ const c=f.geometry.coordinates;if(!Array.isArray(c)||c.length<2)return;
+ if(kmzSpotlight)map.removeLayer(kmzSpotlight);
+ kmzSpotlight=L.circleMarker([c[1],c[0]],{radius:10,weight:2,color:'#fff',fillColor:'#a4237d',fillOpacity:1}).addTo(map);
+ kmzSpotlight.bindPopup(()=>popup(f,kmzSpotlight),{maxWidth:360});
+ map.flyTo([c[1],c[0]],16,{duration:.55});setTimeout(()=>kmzSpotlight?.openPopup(),600);
+};
+function buildKmzCaseIndex(g,groups){
+ const host=document.getElementById('kmzIndex');
+ if(!host)return;
+ host.textContent='';
+ const input=document.createElement('input');input.className='search';input.type='search';
+ input.placeholder='Buscar un hito por nombre';input.setAttribute('aria-label','Buscar hito turístico');
+ host.appendChild(input);
+ const sets=document.createElement('div');sets.className='kmz-case-groups';host.appendChild(sets);
+ const nodes=[];
+ for(const group of groups){
+  const groupF=g.features.filter(f=>f.properties?.categoria===group.cat).sort((a,b)=>String(a.properties.nombre).localeCompare(String(b.properties.nombre),'es'));
+  if(!groupF.length)continue;
+  const groupEl=document.createElement('details');groupEl.className='kmz-case-group';
+  const heading=document.createElement('summary');heading.textContent=group.label+' · '+groupF.length+' lugares';groupEl.appendChild(heading);
+  const items=document.createElement('div');items.className='kmz-case-items';
+  for(const f of groupF){
+   const p=f.properties||{};if(!p.id)continue;kmzById.set(p.id,f);
+   const el=document.createElement('details');el.className='kmz-case-entry';
+   const summary=document.createElement('summary');summary.textContent=p.nombre||'Lugar sin nombre';el.appendChild(summary);
+   const body=document.createElement('div');body.className='kmz-case-body';
+   const descr=document.createElement('p');
+   const original=String(p.texto_guia_2025||p.texto_documental||p.descripcion||p.direccion||'Ficha georreferenciada desde el KMZ aportado.');
+   descr.textContent=original.length>350?original.slice(0,347)+'…':original;body.appendChild(descr);
+   const go=document.createElement('button');go.type='button';go.className='btn';go.textContent='Ubicar y abrir ficha completa';
+   go.addEventListener('click',()=>window.abrirHitoKmz(p.id));body.appendChild(go);
+   el.appendChild(body);items.appendChild(el);nodes.push({el,groupEl,term:(p.nombre+' '+p.categoria+' '+original).toLowerCase()});
+  }
+  groupEl.appendChild(items);sets.appendChild(groupEl);
+ }
+ input.addEventListener('input',()=>{
+  const term=input.value.trim().toLocaleLowerCase('es');
+  for(const n of nodes)n.el.hidden=!!term&&!n.term.includes(term);
+  for(const groupEl of sets.children){
+   const matches=[...groupEl.querySelectorAll('.kmz-case-entry')].some(el=>!el.hidden);
+   groupEl.hidden=!matches;
+   if(term&&matches)groupEl.open=true;
+  }
+ });
+}
 window.mostrarKmz=(key)=>{
   const item=layerMap['kmz-'+key];
   if(!item){document.getElementById('status').textContent='Los hitos del ZIP todavía se están cargando; vuelve a pulsar en un instante.';return;}
@@ -147,6 +197,7 @@ fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
     if(!features.length)continue;
     register('kmz-'+group.key,group.label+' ('+features.length+')',{type:'FeatureCollection',features},{},group.color,false,'kmzLayers','Ubicación digitalizada en KMZ. Haz clic para relato, documento y cómo llegar.');
   }
+  buildKmzCaseIndex(g,kmzGrupos);
   const info=document.getElementById('kmzInfo');
   if(info)info.textContent=g.features.length+' hitos digitalizados. Relatos poéticos + catastro 2025 cuando hay coincidencia. La información comercial y las ubicaciones requieren revisión.';
 })
@@ -161,7 +212,7 @@ const hydroColors=['#146DAB','#217A92','#268A78','#5B60A5','#4875AD','#98668F','
 const hydroList=document.getElementById('hydroLayers'),poems=document.getElementById('hydroPoetry');
 window.abrirCauces=()=>{
  const panel=document.getElementById('hydroSection');
- if(panel){panel.open=true;document.getElementById('right').classList.add('mobile-open');panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
+ if(panel){panel.open=true;document.querySelectorAll('aside').forEach(el=>el.classList.remove('mobile-open'));document.getElementById('right').classList.add('mobile-open');panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
 };
 window.verCauce=(id)=>{
  const key='hidro-'+id,entry=layerMap[key];
