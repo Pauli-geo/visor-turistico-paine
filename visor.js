@@ -18,6 +18,7 @@ const fotoReferencia=(name,p)=>{
  const editable=(window.FOTOS_HITOS||{})[name];
  if(editable&&editable.archivo)return {url:editable.archivo,note:editable.tipo==='fotografia_del_lugar'?(editable.nota||'Fotografía del lugar'):('Imagen referencial: '+(editable.nota||'entorno de Paine'))};
  if(pics[name])return {url:pics[name],note:''};
+ if(p.foto&&/^(imagenes\/|https:\/\/)/.test(p.foto))return {url:p.foto,note:p.foto_estado||'Foto vinculada al hito: verificar atribución'};
  const original=p.foto||'';
  if(original&&assets[original])return {url:assets[original],note:p.foto_aclaracion||''};
  if(/pintué/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:'Fotografía del Estero Pintué'};
@@ -45,10 +46,12 @@ function popup(f,ly){
  const photoHtml=photo.url?'<img class="ficha-foto" src="'+safe(photo.url)+'" alt="Imagen turística: '+safe(name)+'" loading="lazy" onerror="this.style.display='+"'none'"+'">':'';
  let html='<div class="ficha">'+photoHtml+'<h3>'+safe(name)+'</h3><div class="meta">'+safe(p.categoria||p.categoria_proteccion||p.AREA_C||'Territorio de Paine')+'</div><p>'+safe(relatoDe(p,name))+'</p>';
  if(photo.note)html+='<p class="meta"><i>'+safe(photo.note)+'</i></p>';
- if(p.descripcion&&p.descripcion!==p.relato)html+='<p>'+safe(p.descripcion)+'</p>';
+ if(p.descripcion&&p.descripcion!==p.relato)html+='<p><b>Información del catastro:</b> '+safe(p.descripcion)+'</p>';
+ if(p.texto_guia_2025)html+='<details class="ficha-doc"><summary>Leer descripción del documento turístico 2025</summary><p>'+safe(p.texto_guia_2025)+'</p><p class="meta"><b>Fuente:</b> '+safe(p.fuente_guia_2025||'Guía de Turismo Paine 2025')+'</p></details>';
  if(p.observaciones&&p.observaciones!==p.descripcion)html+='<p class="meta">'+safe(p.observaciones)+'</p>';
  if(p.LOCALIDAD){const num=v=>Number.isFinite(Number(v))?new Intl.NumberFormat('es-CL').format(v):'—';html+='<p class="meta"><b>Censo 2024:</b> '+num(p.n_per)+' habitantes · '+num(p.n_hombres)+' hombres · '+num(p.n_mujeres)+' mujeres · '+num(p.n_hog)+' hogares</p>'}
- if(p.direccion)html+='<p class="meta"><b>Dirección:</b> '+safe(p.direccion)+'</p>';
+ if(p.direccion)html+='<p class="meta"><b>Dirección según catastro:</b> '+safe(p.direccion)+'</p>';
+ if(p.archivo_kmz)html+='<p class="meta"><b>Localización:</b> archivo KMZ «'+safe(p.archivo_kmz)+'» · ubicación por revisar</p>';
  if(p.fuente)html+='<p class="meta"><b>Fuente:</b> '+safe(p.fuente)+'</p>';
  if(p.precision||p.precision_geometrica)html+='<p class="meta"><b>Precisión:</b> '+safe(p.precision||p.precision_geometrica)+'</p>';
  if(c){
@@ -100,6 +103,39 @@ fetch('datos/corredores_turisticos.geojson',{cache:'no-store'})
  }
 })
 .catch(err=>{console.warn(err);document.getElementById('corridorLayers').textContent='No fue posible cargar estas rutas. Recarga la página.'});
+
+// Nuevos puntos georreferenciados del KMZ turístico 2026. Se agrupan por tipo, no se mezclan con el catastro sin coordenadas.
+const kmzGrupos=[
+  {key:'gastronomia',cat:'Gastronomía y productos locales',label:'Sabores y productos de Paine',color:'#d47733',defaultOn:false},
+  {key:'alojamientos',cat:'Alojamientos y camping',label:'Alojamientos y camping',color:'#528b50',defaultOn:false},
+  {key:'vinas',cat:'Viñas y enoturismo',label:'Viñas y enoturismo',color:'#9d529c',defaultOn:false},
+  {key:'patrimonio',cat:'Patrimonio e historia',label:'Patrimonio e historia',color:'#bb557b',defaultOn:false},
+  {key:'naturaleza',cat:'Naturaleza y paisaje',label:'Naturaleza y paisaje',color:'#268a69',defaultOn:true},
+  {key:'experiencias',cat:'Experiencias y eventos',label:'Experiencias y eventos',color:'#ca8945',defaultOn:false},
+  {key:'comunidad',cat:'Patrimonio comunitario',label:'Patrimonio comunitario',color:'#527caf',defaultOn:false}
+];
+window.mostrarKmz=(key)=>{
+  const item=layerMap['kmz-'+key];
+  if(!item){document.getElementById('status').textContent='Los hitos del ZIP todavía se están cargando; vuelve a pulsar en un instante.';return;}
+  item.layer.addTo(map);zoomLayer(item.layer);
+  document.querySelectorAll('#kmzLayers label.layer').forEach(el=>{if(el.textContent.includes(item.name))el.querySelector('input').checked=true});
+};
+fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No se pudo abrir el inventario de KMZ')))
+.then(g=>{
+  for(const group of kmzGrupos){
+    const features=g.features.filter(f=>f.properties?.categoria===group.cat);
+    if(!features.length)continue;
+    register('kmz-'+group.key,group.label+' ('+features.length+')',{type:'FeatureCollection',features},{},group.color,group.defaultOn,'kmzLayers','Ubicación digitalizada en KMZ. Haz clic para relato, documento y cómo llegar.');
+  }
+  const info=document.getElementById('kmzInfo');
+  if(info)info.textContent=g.features.length+' hitos digitalizados. Relatos poéticos + catastro 2025 cuando hay coincidencia. La información comercial y las ubicaciones requieren revisión.';
+})
+.catch(err=>{console.error(err);document.getElementById('kmzInfo').textContent='No se pudo abrir la capa KMZ: '+err.message;});
+fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No disponible')))
+.then(g=>register('ajial','El Ajial · área natural (KMZ)',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers','Polígono KMZ aportado, sujeto a validación'))
+.catch(err=>console.warn('No se cargó reserva El Ajial',err));
 const captions={'Paine Centro':'Entre la estación, las casonas y los encuentros cotidianos, el corazón de la comuna cuenta su historia.','Champa - Hospital':'La vida de campo en torno al río Angostura, donde el tren y las sandías acompañaron el paso de generaciones.','Pintue':'El valle de Aculeo a los pies del Cordón de Cantillana: la memoria del agua y el paisaje se encuentran aquí.','El Transito':'El camino hacia la precordillera abre puertas a antiguas haciendas, viñas y tradiciones.','Huelquen':'Huelquén enlaza los caminos de Padre Hurtado con la vida rural, las viñas y los cerros de El Ajial.','Chada':'El paso entre valles y montañas, una puerta de caminos y memorias de la Independencia.'};
 D.areas.features.forEach((f,i)=>{let name=nombreCorregido(f.properties.nombre_corto),id='urban'+i;let layer=lay({type:'FeatureCollection',features:[f]},{color:'#cb3e86',weight:3,fillColor:'#f9da81',fillOpacity:.16});layerMap[id]={layer,name};layer.addTo(map);let el=document.createElement('label');el.className='listing';el.innerHTML='<input type="checkbox" checked><div class="body"><strong>'+safe(name)+'</strong><small>'+safe(captions[name]||'Una localidad para recorrer y descubrir.')+'</small></div><button class="go" title="Ir al área urbana">↗</button>';document.getElementById('urbanList').appendChild(el);el.querySelector('input').onchange=e=>e.target.checked?layer.addTo(map):map.removeLayer(layer);const jump=()=>{layer.addTo(map);el.querySelector('input').checked=true;zoomLayer(layer);roads.addTo(map);layer.bringToFront()};el.querySelector('button').onclick=jump;el.querySelector('.body').onclick=jump;});
 // Additional verified road classes, selectable individually
