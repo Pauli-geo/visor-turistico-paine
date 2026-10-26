@@ -444,18 +444,19 @@
       "categoria": "Patrimonio y monumentos",
       "lat": -33.8100957,
       "lon": -70.7390977,
-      "descripcion_breve": "En el corazón de Paine, la plaza es un lugar para encontrarse, recordar y descubrir el ritmo cotidiano del pueblo.",
-      "relato": "Entre árboles, conversaciones y celebraciones, la Plaza de Armas recibe a quienes desean conocer la memoria cívica y la vida del centro painino.",
+      "descripcion_breve": "La Plaza de Armas de Paine se proyecta como un renovado lugar de encuentro ciudadano, a partir de un mejoramiento municipal aún por materializar.",
+      "relato": "Durante mucho tiempo, Paine dejó en segundo plano su plaza principal, ese espacio que debiera reunir los pasos y las voces de la comuna. Hoy, un proyecto de mejoramiento busca devolverle su lugar en el corazón de la ciudad: una plaza para el encuentro, las risas de niñas y niños, los paseos tranquilos, las conversaciones bajo los árboles y las celebraciones que construyen comunidad. Un nuevo capítulo para que Paine vuelva a encontrarse en su plaza.",
       "sector": "Paine Centro",
       "direccion": "Centro de Paine",
       "sitio_web": "",
-      "foto_principal": "assets/municipalidad.jpg",
-      "foto_aclaracion": "Fotografía aérea del entorno municipal; imagen específica de la plaza pendiente.",
+      "foto_principal": "",
+      "foto_aclaracion": "Se recibió una nueva fotografía de la Plaza de Armas para incorporar a la versión definitiva; no utilizar la antigua foto aérea de la Municipalidad como imagen de la plaza.",
       "galeria": [],
       "fuente": "29-Mejoramiento integral Plaza de Armas de Paine centro.geojson; geometría de proyecto EPSG:32719",
       "estado_validacion": "geom_proyecto_validar_deslindes",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-24"
+      "fecha_actualizacion": "2026-10-26",
+      "estado_multimedia": "fotografia_plaza_aportada_pendiente_integracion_archivo"
     }
   ]
 }
