@@ -69,20 +69,30 @@ function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLay
 function register(id,name,geo,style,color,visible,target,desc){let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};if(visible)layer.addTo(map);const d=document.getElementById(target);let label=document.createElement('label');label.className='layer';label.innerHTML='<input type="checkbox" '+(visible?'checked':'')+' aria-label="'+safe(name)+'"><span>'+safe(name)+(desc?'<div class="layer-desc">'+safe(desc)+'</div>':'')+'</span><button class="zoom" title="Ir a capa">⌖</button>';d.appendChild(label);let ck=label.querySelector('input');ck.addEventListener('change',()=>{if(ck.checked){layer.addTo(map);zoomLayer(layer)}else map.removeLayer(layer)});label.querySelector('button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();ck.checked=true;layer.addTo(map);zoomLayer(layer)});return layer;}
 function zoomLayer(layer){let bounds=layer.getBounds?.();if(bounds?.isValid()){map.flyToBounds(bounds.pad(.12),{duration:.7,maxZoom:14});}else document.getElementById('status').textContent='Este catálogo contiene registros sin coordenadas; consulta las fichas del panel para ubicarlos por su dirección.';}
 function filt(g,check){return {...g,features:g.features.filter(check)}};
-// Backbone local-first. External tiles are optional; local vector background never disappears.
-const roads=register('roads','Red vial principal',D.roads,{color:'#9b9f9a',weight:2,opacity:.72},null,true,'roadsLayers','Red municipal de calles y caminos');
+// Al iniciar solo se muestra el callejero base. El visitante activa las capas temáticas cuando quiera.
+const MUNICIPIO_LAT=-33.8077603, MUNICIPIO_LON=-70.7419399;
+for(const conjunto of [D.hitos,D.culturales,D.estaciones,D.cmn]){
+ for(const feat of conjunto?.features||[]){
+  const nombre=String(feat.properties?.nombre||feat.properties?.NOMBRE||'').toLocaleLowerCase('es');
+  if(nombre.includes('municipalidad de paine') && feat.geometry?.type==='Point'){
+    feat.geometry.coordinates=[MUNICIPIO_LON,MUNICIPIO_LAT];
+    feat.properties.fuente_ubicacion='MUNICIPALIDAD DE PAINE.kmz · Turismo.zip (octubre 2026)';
+  }
+ }
+}
+const roads=register('roads','Red vial principal',D.roads,{color:'#9b9f9a',weight:2,opacity:.72},null,false,'roadsLayers','Red municipal de calles y caminos');
 register('metropolitan','Parques Metropolitanos · Plan Regulador Metropolitano de Santiago',D.parques,{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'natureLayers');
 register('protection','Protección ecológica · Plan Regulador Metropolitano de Santiago',D.proteccion,{color:'#347554',weight:1.5,fillColor:'#4c9b65',fillOpacity:.12},null,false,'natureLayers');
-register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,true,'natureLayers');
-register('aguas','Ríos y esteros destacados',D.hidrografia,{color:'#218dbe',weight:2.6,opacity:.92},null,true,'natureLayers');
-register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,true,'roadsLayers');
-register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',true,'roadsLayers');
-register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:'#dc8821',weight:5,opacity:.9},null,true,'roadsLayers');
-register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:'#9e42a7',weight:4,opacity:.9},null,true,'roadsLayers');
-register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',true,'attractionLayers');
-register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',true,'attractionLayers');
-register('plaza','Plaza de Armas de Paine · polígono del proyecto',D.plaza,{color:'#b51c80',weight:3,fillColor:'#eaaa4a',fillOpacity:.35},null,true,'attractionLayers','Ámbito del proyecto municipal de mejoramiento integral');
-register('tricolor','Estadio Municipal Tricolor',D.tricolor,{color:'#b92378',weight:2,fillColor:'#ffbfdb',fillOpacity:.32},null,true,'attractionLayers');
+register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'natureLayers');
+register('aguas','Ríos y esteros destacados',D.hidrografia,{color:'#218dbe',weight:2.6,opacity:.92},null,false,'natureLayers');
+register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'roadsLayers');
+register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',false,'roadsLayers');
+register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:'#dc8821',weight:5,opacity:.9},null,false,'roadsLayers');
+register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:'#9e42a7',weight:4,opacity:.9},null,false,'roadsLayers');
+register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',false,'attractionLayers');
+register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',false,'attractionLayers');
+register('plaza','Plaza de Armas de Paine · polígono del proyecto',D.plaza,{color:'#b51c80',weight:3,fillColor:'#eaaa4a',fillOpacity:.35},null,false,'attractionLayers','Ámbito del proyecto municipal de mejoramiento integral');
+register('tricolor','Estadio Municipal Tricolor',D.tricolor,{color:'#b92378',weight:2,fillColor:'#ffbfdb',fillOpacity:.32},null,false,'attractionLayers');
 register('cmn','Monumentos Nacionales · CMN',D.cmn,{},'#c37b2e',false,'heritageLayers');
 register('lodgings','Alojamientos · Paine 2025',D.alojamientos,{},'#598447',false,'lodgingLayers');
 register('catastro','Catastro Territorial de Atractivos y Lugares de Interés Turístico · diciembre 2025',D.catastro,{},'#91664e',false,'catalogLayers');
@@ -99,7 +109,7 @@ fetch('datos/corredores_turisticos.geojson',{cache:'no-store'})
 .then(g=>{
  for(const f of g.features||[]){
   const q=f.properties;
-  register('corridor-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:q.color||'#db6c25',weight:5,opacity:.95},null,true,'corridorLayers','Trazado simplificado de referencia');
+  register('corridor-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:q.color||'#db6c25',weight:5,opacity:.95},null,false,'corridorLayers','Trazado simplificado de referencia');
  }
 })
 .catch(err=>{console.warn(err);document.getElementById('corridorLayers').textContent='No fue posible cargar estas rutas. Recarga la página.'});
@@ -120,13 +130,21 @@ window.mostrarKmz=(key)=>{
   item.layer.addTo(map);zoomLayer(item.layer);
   document.querySelectorAll('#kmzLayers label.layer').forEach(el=>{if(el.textContent.includes(item.name))el.querySelector('input').checked=true});
 };
+
+fetch('datos/conexion_valdivia_paine_vial.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No se pudo cargar conexión vial')))
+.then(g=>{for(const f of g.features||[]){
+ const q=f.properties||{};
+ register('tramo-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:q.rol==='G-500'?'#d54b42':'#713fa0',weight:5,opacity:.95},null,false,'corridorLayers','Trazado de red vial KMZ aportada; activa la casilla para visualizar');
+}})
+.catch(err=>console.warn('Conexión vial Valdivia de Paine:',err));
 fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No se pudo abrir el inventario de KMZ')))
 .then(g=>{
   for(const group of kmzGrupos){
     const features=g.features.filter(f=>f.properties?.categoria===group.cat);
     if(!features.length)continue;
-    register('kmz-'+group.key,group.label+' ('+features.length+')',{type:'FeatureCollection',features},{},group.color,group.defaultOn,'kmzLayers','Ubicación digitalizada en KMZ. Haz clic para relato, documento y cómo llegar.');
+    register('kmz-'+group.key,group.label+' ('+features.length+')',{type:'FeatureCollection',features},{},group.color,false,'kmzLayers','Ubicación digitalizada en KMZ. Haz clic para relato, documento y cómo llegar.');
   }
   const info=document.getElementById('kmzInfo');
   if(info)info.textContent=g.features.length+' hitos digitalizados. Relatos poéticos + catastro 2025 cuando hay coincidencia. La información comercial y las ubicaciones requieren revisión.';
@@ -137,7 +155,7 @@ fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 .then(g=>register('ajial','El Ajial · área natural (KMZ)',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers','Polígono KMZ aportado, sujeto a validación'))
 .catch(err=>console.warn('No se cargó reserva El Ajial',err));
 const captions={'Paine Centro':'Entre la estación, las casonas y los encuentros cotidianos, el corazón de la comuna cuenta su historia.','Champa - Hospital':'La vida de campo en torno al río Angostura, donde el tren y las sandías acompañaron el paso de generaciones.','Pintue':'El valle de Aculeo a los pies del Cordón de Cantillana: la memoria del agua y el paisaje se encuentran aquí.','El Transito':'El camino hacia la precordillera abre puertas a antiguas haciendas, viñas y tradiciones.','Huelquen':'Huelquén enlaza los caminos de Padre Hurtado con la vida rural, las viñas y los cerros de El Ajial.','Chada':'El paso entre valles y montañas, una puerta de caminos y memorias de la Independencia.'};
-D.areas.features.forEach((f,i)=>{let name=nombreCorregido(f.properties.nombre_corto),id='urban'+i;let layer=lay({type:'FeatureCollection',features:[f]},{color:'#cb3e86',weight:3,fillColor:'#f9da81',fillOpacity:.16});layerMap[id]={layer,name};layer.addTo(map);let el=document.createElement('label');el.className='listing';el.innerHTML='<input type="checkbox" checked><div class="body"><strong>'+safe(name)+'</strong><small>'+safe(captions[name]||'Una localidad para recorrer y descubrir.')+'</small></div><button class="go" title="Ir al área urbana">↗</button>';document.getElementById('urbanList').appendChild(el);el.querySelector('input').onchange=e=>e.target.checked?layer.addTo(map):map.removeLayer(layer);const jump=()=>{layer.addTo(map);el.querySelector('input').checked=true;zoomLayer(layer);roads.addTo(map);layer.bringToFront()};el.querySelector('button').onclick=jump;el.querySelector('.body').onclick=jump;});
+D.areas.features.forEach((f,i)=>{let name=nombreCorregido(f.properties.nombre_corto),id='urban'+i;let layer=lay({type:'FeatureCollection',features:[f]},{color:'#cb3e86',weight:3,fillColor:'#f9da81',fillOpacity:.16});layerMap[id]={layer,name};let el=document.createElement('label');el.className='listing';el.innerHTML='<input type="checkbox"><div class="body"><strong>'+safe(name)+'</strong><small>'+safe(captions[name]||'Una localidad para recorrer y descubrir.')+'</small></div><button class="go" title="Ir al área urbana">↗</button>';document.getElementById('urbanList').appendChild(el);el.querySelector('input').onchange=e=>e.target.checked?layer.addTo(map):map.removeLayer(layer);const jump=()=>{layer.addTo(map);el.querySelector('input').checked=true;zoomLayer(layer);layer.bringToFront()};el.querySelector('button').onclick=jump;el.querySelector('.body').onclick=jump;});
 // Additional verified road classes, selectable individually
 let kinds=[['Ruta 5 Sur',/RUTA 5|PANAMERICANA|LONGITUDINAL/],['Acceso Sur',/ACCESO SUR/],['Padre Hurtado',/PADRE HURTADO|G-45/],['Camino a Chada',/CHADA|G-515/],['Champa–Hospital',/CHAMPA|HOSPITAL|G-546/],['Pintué–Rangue',/PINTU|RANGUE|G-54/]];
 kinds.forEach(([name,re],i)=>{let g=filt(D.roads,f=>re.test(String(f.properties.NOMBRE_CAL||'')+' '+String(f.properties.LOCALIDAD||'')));if(g.features.length)register('road'+i,name,g,{color:'#dc8821',weight:3,opacity:.9},null,false,'roadsLayers')});
@@ -158,6 +176,7 @@ document.querySelectorAll('input[name="base"]').forEach(i=>i.onchange=()=>setBas
 document.querySelector('input[name="base"][value="osm"]').checked=true;setBase('osm');
 window.toggleAndFocus=id=>{let v=layerMap[id];if(!v)return;v.layer.addTo(map);zoomLayer(v.layer);document.querySelectorAll('label.layer').forEach(el=>{if(el.textContent.includes(v.name))el.querySelector('input').checked=true})};
 window.focusPoint=(lat,lon,z,name)=>{
+ if(String(name).toLowerCase().includes('municipalidad de paine')){lat=MUNICIPIO_LAT;lon=MUNICIPIO_LON;}
  const layers=featureLookup.get(nombreCorregido(name))||[];
  const target=layers.find(x=>x.getLatLng&&x.getLatLng().distanceTo(L.latLng(lat,lon))<120)||layers[0];
  if(target){
