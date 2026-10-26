@@ -20,6 +20,7 @@ const fotoReferencia=(name,p)=>{
  if(pics[name])return {url:pics[name],note:''};
  if(p.foto&&/^(imagenes\/|https:\/\/)/.test(p.foto))return {url:p.foto,note:p.foto_estado||'Foto vinculada al hito: verificar atribución'};
  const original=p.foto||'';
+ if(original&&/^(imagenes\/|https:\/\/)/.test(original))return {url:original,note:p.foto_aclaracion||''};
  if(original&&assets[original])return {url:assets[original],note:p.foto_aclaracion||''};
  if(/pintué/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:'Fotografía del Estero Pintué'};
  if(/laguna|aculeo|humedal|cantillana/i.test(name))return {url:'imagenes/hitos/laguna_aculeo.webp',note:'Fotografía de la Laguna de Aculeo; imagen referencial cuando el sitio seleccionado es otro'};
@@ -84,7 +85,7 @@ const roads=register('roads','Red vial principal',D.roads,{color:'#9b9f9a',weigh
 register('metropolitan','Parques Metropolitanos · Plan Regulador Metropolitano de Santiago',D.parques,{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'natureLayers');
 register('protection','Protección ecológica · Plan Regulador Metropolitano de Santiago',D.proteccion,{color:'#347554',weight:1.5,fillColor:'#4c9b65',fillOpacity:.12},null,false,'natureLayers');
 register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'natureLayers');
-register('aguas','Ríos y esteros destacados',D.hidrografia,{color:'#218dbe',weight:2.6,opacity:.92},null,false,'natureLayers');
+// Cada río y estero se sirve en una capa específica desde datos/cauces_paine_individuales.geojson.
 register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'roadsLayers');
 register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',false,'roadsLayers');
 register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:'#dc8821',weight:5,opacity:.9},null,false,'roadsLayers');
@@ -154,6 +155,61 @@ fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No disponible')))
 .then(g=>register('ajial','El Ajial · área natural (KMZ)',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers','Polígono KMZ aportado, sujeto a validación'))
 .catch(err=>console.warn('No se cargó reserva El Ajial',err));
+
+// Capa hidrográfica interpretativa: textos completos a la izquierda; lectura geográfica y controles a la derecha.
+const hydroColors=['#146DAB','#217A92','#268A78','#5B60A5','#4875AD','#98668F','#8568A6','#417DB1','#14859A','#3E9090','#5F78A6'];
+const hydroList=document.getElementById('hydroLayers'),poems=document.getElementById('hydroPoetry');
+window.abrirCauces=()=>{
+ const panel=document.getElementById('hydroSection');
+ if(panel){panel.open=true;document.getElementById('right').classList.add('mobile-open');panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
+};
+window.verCauce=(id)=>{
+ const key='hidro-'+id,entry=layerMap[key];
+ if(!entry){document.getElementById('status').textContent='La ficha de este estero todavía se está cargando.';return;}
+ const section=document.getElementById('hydroSection');
+ if(section)section.open=true;
+ const item=document.getElementById('hydro-item-'+id);
+ if(item)item.open=true;
+ const input=document.getElementById('hydro-check-'+id);
+ if(input)input.checked=true;
+ entry.layer.addTo(map);
+ zoomLayer(entry.layer);
+};
+fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No se descargaron los cauces')))
+.then(g=>{
+  if(!g.cauces?.length||!g.features?.length)throw Error('La capa de cauces está vacía');
+  for(const [i,item] of g.cauces.entries()){
+    const collection={type:'FeatureCollection',features:g.features.filter(f=>f.properties?.id===item.id)};
+    if(!collection.features.length)continue;
+    const color=hydroColors[i%hydroColors.length];
+    const style={color,weight:4,opacity:.95,dashArray:i%3===0?'9,4':i%3===1?'':'3,6'};
+    const layer=lay(collection,style);
+    layerMap['hidro-'+item.id]={layer,name:item.nombre,visible:false,desc:item.descripcion_geo};
+    // El panel izquierdo conserva la voz narrativa; la ficha derecha NO la repite.
+    const tale=document.createElement('details');tale.className='relato-cauce';
+    const title=document.createElement('summary');title.textContent=item.nombre;tale.appendChild(title);
+    const paragraph=document.createElement('p');paragraph.className='poema-cauce';paragraph.textContent=item.relato;tale.appendChild(paragraph);
+    const b=document.createElement('button');b.className='btn';b.textContent='Ver este cauce en el mapa';b.addEventListener('click',()=>window.verCauce(item.id));tale.appendChild(b);
+    poems?.appendChild(tale);
+    // Acordeón anidado de la leyenda: una ficha geográfica individual y un interruptor explícito.
+    const detail=document.createElement('details');detail.className='water-course';detail.id='hydro-item-'+item.id;
+    const summary=document.createElement('summary');summary.textContent=item.nombre;summary.style.borderLeft='5px solid '+color;detail.appendChild(summary);
+    const body=document.createElement('div');body.className='water-body';
+    const geographic=document.createElement('p');geographic.textContent=item.descripcion_geo;body.appendChild(geographic);
+    const context=document.createElement('small');context.textContent=item.region;context.className='water-region';body.appendChild(context);
+    const controls=document.createElement('div');controls.className='water-controls';
+    const label=document.createElement('label');label.className='water-label';
+    const check=document.createElement('input');check.type='checkbox';check.id='hydro-check-'+item.id;check.checked=false;
+    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);zoomLayer(layer);}else{map.removeLayer(layer)}});
+    label.appendChild(check);label.appendChild(document.createTextNode('Mostrar en el mapa'));
+    const zoom=document.createElement('button');zoom.className='zoom';zoom.type='button';zoom.textContent='⌖ Acercar';zoom.addEventListener('click',()=>window.verCauce(item.id));
+    controls.appendChild(label);controls.appendChild(zoom);body.appendChild(controls);detail.appendChild(body);hydroList.appendChild(detail);
+  }
+  const summary=document.getElementById('hydroCount');
+  if(summary)summary.textContent=g.cauces.length+' cursos identificados · despliega cada uno para leer su recorrido y elegir qué mostrar.';
+})
+.catch(err=>{console.warn('Cauces separados:',err);if(hydroList)hydroList.textContent='No se pudieron cargar los cursos de agua. Actualiza la página.';});
 const captions={'Paine Centro':'Entre la estación, las casonas y los encuentros cotidianos, el corazón de la comuna cuenta su historia.','Champa - Hospital':'La vida de campo en torno al río Angostura, donde el tren y las sandías acompañaron el paso de generaciones.','Pintue':'El valle de Aculeo a los pies del Cordón de Cantillana: la memoria del agua y el paisaje se encuentran aquí.','El Transito':'El camino hacia la precordillera abre puertas a antiguas haciendas, viñas y tradiciones.','Huelquen':'Huelquén enlaza los caminos de Padre Hurtado con la vida rural, las viñas y los cerros de El Ajial.','Chada':'El paso entre valles y montañas, una puerta de caminos y memorias de la Independencia.'};
 D.areas.features.forEach((f,i)=>{let name=nombreCorregido(f.properties.nombre_corto),id='urban'+i;let layer=lay({type:'FeatureCollection',features:[f]},{color:'#cb3e86',weight:3,fillColor:'#f9da81',fillOpacity:.16});layerMap[id]={layer,name};let el=document.createElement('label');el.className='listing';el.innerHTML='<input type="checkbox"><div class="body"><strong>'+safe(name)+'</strong><small>'+safe(captions[name]||'Una localidad para recorrer y descubrir.')+'</small></div><button class="go" title="Ir al área urbana">↗</button>';document.getElementById('urbanList').appendChild(el);el.querySelector('input').onchange=e=>e.target.checked?layer.addTo(map):map.removeLayer(layer);const jump=()=>{layer.addTo(map);el.querySelector('input').checked=true;zoomLayer(layer);layer.bringToFront()};el.querySelector('button').onclick=jump;el.querySelector('.body').onclick=jump;});
 // Additional verified road classes, selectable individually
