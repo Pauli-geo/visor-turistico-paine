@@ -12,7 +12,10 @@ const pics={
 'Laguna de Aculeo':'imagenes/hitos/laguna_aculeo.webp',
 'Municipalidad de Paine':'imagenes/hitos/municipalidad.webp',
 'Estadio Municipal Tricolor':'imagenes/hitos/estadio_tricolor.webp',
-'Estero Pintué':'imagenes/hitos/estero_pintue.webp'
+'Estero Pintué':'imagenes/hitos/estero_pintue.webp',
+'Plaza de Armas de Paine':'imagenes/hitos/plaza_armas_usuario.webp',
+'Camino Padre Hurtado · G-45-H':'imagenes/hitos/huelquen_maipo_andes_usuario.webp',
+'Circuito Maipo Andes / Huelquén–Chada':'imagenes/hitos/huelquen_maipo_andes_usuario.webp'
 };
 const originCentral='-33.4506,-70.6899',originPaine='-33.81625,-70.7437';
 const fotoReferencia=(name,p)=>{
@@ -158,6 +161,9 @@ for(const conjunto of [D.hitos,D.culturales,D.estaciones,D.cmn]){
   }
  }
 }
+// Fotografías originales aportadas por el municipio para las fichas cartográficas.
+for(const feat of D.plaza?.features||[]){feat.properties=feat.properties||{};feat.properties.foto='imagenes/hitos/plaza_armas_usuario.webp';}
+for(const feat of D.routes?.padre?.features||[]){feat.properties=feat.properties||{};feat.properties.foto='imagenes/hitos/huelquen_maipo_andes_usuario.webp';}
 const roads=register('roads','Red vial principal',D.roads,{color:ROAD_COLOR,weight:2,opacity:.82},null,false,'roadsLayers','Red municipal de calles y caminos');
 register('metropolitan','Parques Metropolitanos · Plan Regulador Metropolitano de Santiago',D.parques,{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'natureLayers');
 register('protection','Protección ecológica · Plan Regulador Metropolitano de Santiago',D.proteccion,{color:'#347554',weight:1.5,fillColor:'#4c9b65',fillOpacity:.12},null,false,'natureLayers');
