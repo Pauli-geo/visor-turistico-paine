@@ -274,7 +274,12 @@ fetch('datos/vialidades_kmz_unificadas_polyline.json',{cache:'no-store'})
   // Se conserva la Ruta 5 dentro del conjunto vial, sin añadir trazados base duplicados.
   const label=rol==='G-555'?'Ruta cerros camino a Angostura':rol==='G-500'?'Ruta Camino Abrantes-Peralillo':rol==='G-45-H'?'Camino Padre Hurtado · G-45-H':rol==='Ruta 79'?'Acceso Sur · Ruta 79':rol;
   const f={type:'Feature',properties:{id:'VIAL-'+rol,nombre:label,categoria:'Vías consolidadas',rol,fuente:'VIALIDADES (2).zip'},geometry:{type:'MultiLineString',coordinates:segments.map(decodeRuta)}};
-  register('via-'+rol,label,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:3.4,opacity:.94},null,false,'roadsLayers');
+  if(rol==='Ruta 5'||rol==='G-45-H'){
+   // Conservadas al activar toda la red vial, pero sin capa individual repetida.
+   const hidden=lay({type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:3.4,opacity:.94});
+   const all=document.getElementById('roadsAll');
+   all?.addEventListener('change',()=>all.checked?hidden.addTo(map):map.removeLayer(hidden));
+  }else register('via-'+rol,label,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:3.4,opacity:.94},null,false,'roadsLayers');
  }
 })
 .catch(err=>{console.warn('Vialidades KMZ:',err);const el=document.getElementById('roadsLayers');if(el)el.textContent='No se pudieron cargar los caminos. Actualiza la página.'});
