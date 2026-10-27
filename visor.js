@@ -202,19 +202,21 @@ const kmzGrupos=[
   {key:'comunidad',cat:'Patrimonio comunitario',label:'Patrimonio comunitario',color:'#527caf',defaultOn:false}
 ];
 
-// Índice de casos turísticos: explorar cada sitio sin activar de golpe sus categorías.
-const kmzById=new Map();let kmzSpotlight=null;
+// KMZ: temas desplegables, casilla "Mostrar todos" y casilla propia para cada hito.
+const kmzById=new Map(),kmzCategoryActions=new Map();
 window.abrirHitoKmz=id=>{
- const f=kmzById.get(id);if(!f||f.geometry?.type!=='Point')return;
- const c=f.geometry.coordinates;if(!Array.isArray(c)||c.length<2)return;
- if(kmzSpotlight)map.removeLayer(kmzSpotlight);
- kmzSpotlight=L.circleMarker([c[1],c[0]],{radius:10,weight:2,color:'#fff',fillColor:'#a4237d',fillOpacity:1}).addTo(map);
- kmzSpotlight.bindPopup(()=>popup(f,kmzSpotlight),{maxWidth:360});
- map.flyTo([c[1],c[0]],16,{duration:.55});setTimeout(()=>kmzSpotlight?.openPopup(),600);
+ const item=kmzById.get(id);
+ if(!item)return;
+ item.check.checked=true;
+ item.layer.addTo(map);
+ item.sync();
+ destacarCapa(item.marker);
+ const point=item.marker.getLatLng();
+ map.flyTo(point,16,{duration:.55});
+ setTimeout(()=>item.marker.openPopup(),650);
 };
 function buildKmzCaseIndex(g,groups){
- const host=document.getElementById('kmzIndex');
- if(!host)return;
+ const host=document.getElementById('kmzIndex');if(!host)return;
  host.textContent='';
  const input=document.createElement('input');input.className='search';input.type='search';
  input.placeholder='Buscar un hito por nombre';input.setAttribute('aria-label','Buscar hito turístico');
@@ -222,40 +224,57 @@ function buildKmzCaseIndex(g,groups){
  const sets=document.createElement('div');sets.className='kmz-case-groups';host.appendChild(sets);
  const nodes=[];
  for(const group of groups){
-  const groupF=g.features.filter(f=>f.properties?.categoria===group.cat).sort((a,b)=>String(a.properties.nombre).localeCompare(String(b.properties.nombre),'es'));
+  const groupF=g.features.filter(f=>f.properties?.categoria===group.cat&&f.geometry?.type==='Point').sort((a,b)=>String(a.properties.nombre).localeCompare(String(b.properties.nombre),'es'));
   if(!groupF.length)continue;
   const groupEl=document.createElement('details');groupEl.className='kmz-case-group';
   const heading=document.createElement('summary');heading.textContent=group.label+' · '+groupF.length+' lugares';groupEl.appendChild(heading);
-  const items=document.createElement('div');items.className='kmz-case-items';
+  const groupContent=document.createElement('div');groupContent.className='kmz-case-items';
+  const checkAllRow=document.createElement('label');checkAllRow.className='all-toggle';
+  const checkAll=document.createElement('input');checkAll.type='checkbox';checkAll.checked=false;
+  checkAllRow.appendChild(checkAll);checkAllRow.appendChild(document.createTextNode('Mostrar todos los hitos del tema'));
+  groupContent.appendChild(checkAllRow);
+  const entries=[];
+  const sync=()=>{const selectedCount=entries.filter(x=>x.check.checked).length;checkAll.checked=entries.length>0&&selectedCount===entries.length;checkAll.indeterminate=selectedCount>0&&selectedCount<entries.length;};
   for(const f of groupF){
-   const p=f.properties||{};if(!p.id)continue;kmzById.set(p.id,f);
-   const el=document.createElement('details');el.className='kmz-case-entry';
-   const summary=document.createElement('summary');summary.textContent=p.nombre||'Lugar sin nombre';el.appendChild(summary);
+   const p=f.properties||{};if(!p.id)continue;
+   const item=document.createElement('details');item.className='kmz-case-entry';
+   const summary=document.createElement('summary');summary.textContent=p.nombre||'Lugar sin nombre';item.appendChild(summary);
    const body=document.createElement('div');body.className='kmz-case-body';
-   const descr=document.createElement('p');
-   const original=String(p.texto_guia_2025||p.texto_documental||p.descripcion||p.direccion||'Ficha georreferenciada desde el KMZ aportado.');
-   descr.textContent=original.length>350?original.slice(0,347)+'…':original;body.appendChild(descr);
-   const go=document.createElement('button');go.type='button';go.className='btn';go.textContent='Ubicar y abrir ficha completa';
+   const paragraphs=[p.texto_guia_2025,p.texto_documental,p.descripcion].filter(x=>typeof x==='string'&&x.trim());
+   if(!paragraphs.length&&p.relato)paragraphs.push(p.relato);
+   for(const paraText of [...new Set(paragraphs)]){const descr=document.createElement('p');descr.textContent=paraText;body.appendChild(descr);}
+   const oneRow=document.createElement('label');oneRow.className='attraction-toggle';
+   const check=document.createElement('input');check.type='checkbox';check.checked=false;
+   oneRow.appendChild(check);oneRow.appendChild(document.createTextNode('Mostrar este hito'));body.appendChild(oneRow);
+   const spot=lay({type:'FeatureCollection',features:[f]},{},group.color);
+   const marker=spot.getLayers()[0];
+   check.addEventListener('change',()=>{if(check.checked)spot.addTo(map);else map.removeLayer(spot);sync();});
+   const go=document.createElement('button');go.type='button';go.className='btn';go.textContent='⌖ Ubicar y destacar';
    go.addEventListener('click',()=>window.abrirHitoKmz(p.id));body.appendChild(go);
-   el.appendChild(body);items.appendChild(el);nodes.push({el,groupEl,term:(p.nombre+' '+p.categoria+' '+original).toLowerCase()});
+   item.appendChild(body);groupContent.appendChild(item);
+   const entry={check,layer:spot,marker,sync,feature:f};
+   entries.push(entry);kmzById.set(p.id,entry);
+   nodes.push({el:item,groupEl,term:(p.nombre+' '+p.categoria+' '+paragraphs.join(' ')).toLocaleLowerCase('es')});
   }
-  groupEl.appendChild(items);sets.appendChild(groupEl);
+  const setAll=on=>{for(const item of entries){item.check.checked=on;if(on)item.layer.addTo(map);else map.removeLayer(item.layer);}sync();};
+  checkAll.addEventListener('change',()=>setAll(checkAll.checked));
+  kmzCategoryActions.set(group.key,{setAll,entries,groupEl});
+  groupEl.appendChild(groupContent);sets.appendChild(groupEl);
  }
  input.addEventListener('input',()=>{
   const term=input.value.trim().toLocaleLowerCase('es');
   for(const n of nodes)n.el.hidden=!!term&&!n.term.includes(term);
   for(const groupEl of sets.children){
    const matches=[...groupEl.querySelectorAll('.kmz-case-entry')].some(el=>!el.hidden);
-   groupEl.hidden=!matches;
-   if(term&&matches)groupEl.open=true;
+   groupEl.hidden=!matches;if(term&&matches)groupEl.open=true;
   }
  });
 }
-window.mostrarKmz=(key)=>{
-  const item=layerMap['kmz-'+key];
-  if(!item){document.getElementById('status').textContent='Los hitos del ZIP todavía se están cargando; vuelve a pulsar en un instante.';return;}
-  item.layer.addTo(map);zoomLayer(item.layer);
-  document.querySelectorAll('#kmzLayers label.layer').forEach(el=>{if(el.textContent.includes(item.name))el.querySelector('input').checked=true});
+window.mostrarKmz=key=>{
+ const item=kmzCategoryActions.get(key);
+ if(!item){document.getElementById('status').textContent='La lista de hitos está cargándose.';return;}
+ item.setAll(true);item.groupEl.open=true;
+ let bounds=L.latLngBounds(item.entries.map(x=>x.marker.getLatLng()));if(bounds.isValid())map.flyToBounds(bounds.pad(.14),{maxZoom:14});
 };
 
 fetch('datos/conexion_valdivia_paine_vial.geojson',{cache:'no-store'})
@@ -268,11 +287,6 @@ fetch('datos/conexion_valdivia_paine_vial.geojson',{cache:'no-store'})
 fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No se pudo abrir el inventario de KMZ')))
 .then(g=>{
-  for(const group of kmzGrupos){
-    const features=g.features.filter(f=>f.properties?.categoria===group.cat);
-    if(!features.length)continue;
-    register('kmz-'+group.key,group.label+' ('+features.length+')',{type:'FeatureCollection',features},{},group.color,false,'kmzLayers','Ubicación digitalizada en KMZ. Haz clic para relato, documento y cómo llegar.');
-  }
   buildKmzCaseIndex(g,kmzGrupos);
   const info=document.getElementById('kmzInfo');
   if(info)info.textContent=g.features.length+' hitos digitalizados. Relatos poéticos + catastro 2025 cuando hay coincidencia. La información comercial y las ubicaciones requieren revisión.';
