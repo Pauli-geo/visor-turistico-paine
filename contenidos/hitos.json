@@ -449,14 +449,14 @@
       "sector": "Paine Centro",
       "direccion": "Centro de Paine",
       "sitio_web": "",
-      "foto_principal": "",
-      "foto_aclaracion": "Se recibió una nueva fotografía de la Plaza de Armas para incorporar a la versión definitiva; no utilizar la antigua foto aérea de la Municipalidad como imagen de la plaza.",
+      "foto_principal": "imagenes/hitos/plaza_armas_usuario.webp",
+      "foto_aclaracion": "",
       "galeria": [],
       "fuente": "29-Mejoramiento integral Plaza de Armas de Paine centro.geojson; geometría de proyecto EPSG:32719",
       "estado_validacion": "geom_proyecto_validar_deslindes",
       "estado_publicacion": "en_revision",
-      "fecha_actualizacion": "2026-10-26",
-      "estado_multimedia": "fotografia_plaza_aportada_pendiente_integracion_archivo"
+      "fecha_actualizacion": "2026-10-27",
+      "estado_multimedia": "fotografia_real_aportada_2026"
     }
   ]
 }
