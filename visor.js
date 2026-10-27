@@ -1,4 +1,6 @@
 (()=>{'use strict';const D=window.VISOR_DATA;const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([-33.835,-70.79],11);L.control.zoom({position:'bottomright'}).addTo(map);L.control.scale({metric:true,imperial:false,position:'bottomright'}).addTo(map);
+const ROAD_COLOR='#4D6072';
+const CYAN_WATER='#00B6D1';
 const baseDefs={osm:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',sat:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'};let base=null;const layerMap={};const featureLookup=new Map();let selection=null;
 const safe=s=>String(s??'').replace(/[&<>"']/g,a=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[a]));
 const nombreCorregido=v=>String(v||'').replace(/\bHuelquen\b/gi,'Huelquén').replace(/\bEl Transito\b/gi,'El Tránsito').replace(/\bPintue\b/gi,'Pintué').replace(/\bHuiticalan\b/gi,'Huiticalán');const n=f=>nombreCorregido(f.properties?.nombre||f.properties?.nombre_corto||f.properties?.LOCALIDAD||f.properties?.NOMBRE||f.properties?.NOMBRE_CAL||'Hito de Paine');
@@ -63,9 +65,85 @@ function popup(f,ly){
  if(/^https:\/\//.test(link))html+='<div class="buttonlinks"><a href="'+safe(link)+'" target="_blank" rel="noopener">Fuente / más información ↗</a></div>';
  return html+'</div>';
 }
-function selected(ly){if(selection&&selection.setStyle){try{selection.setStyle(selection._normalStyle||{})}catch{}}selection=ly;if(ly.setStyle){ly._normalStyle={color:ly.options.color,weight:ly.options.weight,fillColor:ly.options.fillColor,fillOpacity:ly.options.fillOpacity,radius:ly.options.radius};ly.setStyle({color:'#db2f89',weight:5,fillColor:'#fcbd3b',fillOpacity:0.6,radius:12})}let b=ly.getBounds?.();if(b&&b.isValid())map.flyToBounds(b.pad(.15),{maxZoom:15,duration:.6});else if(ly.getLatLng)map.flyTo(ly.getLatLng(),15,{duration:.6});}
-function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:point||'#932475',fillOpacity:1}),onEachFeature:(f,x)=>{const key=n(f);if(!featureLookup.has(key))featureLookup.set(key,[]);featureLookup.get(key).push(x);x.bindPopup(()=>popup(f,x),{maxWidth:360});x.on('click',()=>{selected(x);setTimeout(()=>x.openPopup(),650)})}});return l;}
-function register(id,name,geo,style,color,visible,target,desc){let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};if(visible)layer.addTo(map);const d=document.getElementById(target);let label=document.createElement('label');label.className='layer';label.innerHTML='<input type="checkbox" '+(visible?'checked':'')+' aria-label="'+safe(name)+'"><span>'+safe(name)+(desc?'<div class="layer-desc">'+safe(desc)+'</div>':'')+'</span><button class="zoom" title="Ir a capa">⌖</button>';d.appendChild(label);let ck=label.querySelector('input');ck.addEventListener('change',()=>{if(ck.checked){layer.addTo(map);zoomLayer(layer)}else map.removeLayer(layer)});label.querySelector('button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();ck.checked=true;layer.addTo(map);zoomLayer(layer)});return layer;}
+let glowHito=null;
+function destacarCapa(ly){
+ if(!ly)return;
+ selected(ly);
+ let place=ly.getLatLng?.()||ly.getBounds?.()?.getCenter?.();
+ if(!place)return;
+ if(glowHito)map.removeLayer(glowHito);
+ glowHito=L.marker(place,{interactive:false,zIndexOffset:1000,icon:L.divIcon({className:'selected-hito-icon',html:'<span aria-hidden="true"></span>',iconSize:[54,54],iconAnchor:[27,27]})}).addTo(map);
+ if(ly.openPopup)setTimeout(()=>ly.openPopup(),480);
+}
+function selected(ly){
+ if(selection&&selection.setStyle){try{selection.setStyle(selection._normalStyle||{})}catch{}}
+ selection=ly;
+ if(ly.setStyle){
+   ly._normalStyle={color:ly.options.color,weight:ly.options.weight,fillColor:ly.options.fillColor,fillOpacity:ly.options.fillOpacity,radius:ly.options.radius};
+   ly.setStyle({color:'#FFCB33',weight:6,fillColor:'#FFFF54',fillOpacity:.8,radius:13});
+ }
+ let bounds=ly.getBounds?.();
+ if(bounds?.isValid())map.flyToBounds(bounds.pad(.15),{maxZoom:16,duration:.6});
+ else if(ly.getLatLng)map.flyTo(ly.getLatLng(),16,{duration:.6});
+}
+function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:point||'#932475',fillOpacity:1}),onEachFeature:(f,x)=>{const key=n(f);if(!featureLookup.has(key))featureLookup.set(key,[]);featureLookup.get(key).push(x);x.bindPopup(()=>popup(f,x),{maxWidth:360});x.on('click',()=>{destacarCapa(x);setTimeout(()=>x.openPopup(),650)})}});return l;}
+function register(id,name,geo,style,color,visible,target,desc){
+ let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};
+ const host=document.getElementById(target);
+ if(target==='natureLayers'){
+   const box=document.createElement('details');box.className='environment-item';
+   const title=document.createElement('summary');title.textContent=name;box.appendChild(title);
+   const body=document.createElement('div');body.className='environment-body';
+   const label=document.createElement('label');label.className='layer';
+   const input=document.createElement('input');input.type='checkbox';input.checked=false;
+   label.appendChild(input);label.appendChild(document.createTextNode('Mostrar esta capa'));body.appendChild(label);
+   if(desc){const p=document.createElement('p');p.className='layer-desc';p.textContent=desc;body.appendChild(p);}
+   const zoom=document.createElement('button');zoom.type='button';zoom.className='zoom';zoom.textContent='⌖ Localizar';body.appendChild(zoom);
+   input.addEventListener('change',()=>{input.checked?layer.addTo(map):map.removeLayer(layer);if(input.checked)zoomLayer(layer);});
+   zoom.addEventListener('click',()=>{input.checked=true;layer.addTo(map);zoomLayer(layer);});
+   box.appendChild(body);host.appendChild(box);return layer;
+ }
+ if(target==='attractionLayers'){
+   const children=layer.getLayers();layer.clearLayers();
+   const outer=document.createElement('details');outer.className='attraction-group';
+   const title=document.createElement('summary');title.textContent=name+' · '+children.length+' hitos';outer.appendChild(title);
+   const body=document.createElement('div');body.className='attraction-group-body';
+   const allLabel=document.createElement('label');allLabel.className='all-toggle';
+   const allInput=document.createElement('input');allInput.type='checkbox';allInput.checked=false;
+   allLabel.appendChild(allInput);allLabel.appendChild(document.createTextNode('Mostrar todos los hitos de este tema'));body.appendChild(allLabel);
+   const entries=[];
+   for(const [idx,child] of children.entries()){
+     const props=child.feature?.properties||{};
+     const titleText=n(child.feature||{properties:{nombre:name}});
+     const item=document.createElement('details');item.className='attraction-entry';
+     const summary=document.createElement('summary');summary.textContent=titleText;item.appendChild(summary);
+     const panel=document.createElement('div');panel.className='attraction-entry-body';
+     const descText=[props.texto_documental,props.texto_guia_2025,props.descripcion,props.descripcion_breve].filter(x=>typeof x==='string'&&x.trim());
+     const uniqueDesc=[...new Set(descText)];
+     if(uniqueDesc.length){for(const value of uniqueDesc){const para=document.createElement('p');para.textContent=value;panel.appendChild(para);}}
+     else{const para=document.createElement('p');para.textContent=props.relato||'Hito identificado en la cartografía de Paine.';panel.appendChild(para);}
+     const label=document.createElement('label');label.className='attraction-toggle';
+     const check=document.createElement('input');check.type='checkbox';check.checked=false;
+     label.appendChild(check);label.appendChild(document.createTextNode('Mostrar este hito'));panel.appendChild(label);
+     const go=document.createElement('button');go.type='button';go.className='zoom';go.textContent='⌖ Ubicar y destacar';panel.appendChild(go);
+     const sync=()=>{let count=entries.filter(x=>x.check.checked).length;allInput.checked=count===entries.length;allInput.indeterminate=count>0&&count<entries.length;};
+     check.addEventListener('change',()=>{if(check.checked){layer.addLayer(child);layer.addTo(map);}else{layer.removeLayer(child);if(layer.getLayers().length===0)map.removeLayer(layer);}sync();});
+     go.addEventListener('click',()=>{check.checked=true;layer.addLayer(child);layer.addTo(map);sync();destacarCapa(child);});
+     item.appendChild(panel);body.appendChild(item);entries.push({child,check});
+   }
+   const setAll=(on,zoom)=>{for(const item of entries){item.check.checked=on;if(on)layer.addLayer(item.child);else layer.removeLayer(item.child);}if(on){layer.addTo(map);if(zoom)zoomLayer(layer);}else map.removeLayer(layer);allInput.checked=on;allInput.indeterminate=false;};
+   allInput.addEventListener('change',()=>setAll(allInput.checked,false));
+   layerMap[id].activateAll=()=>setAll(true,false);
+   outer.appendChild(body);host.appendChild(outer);return layer;
+ }
+ if(visible)layer.addTo(map);
+ let label=document.createElement('label');label.className='layer';
+ label.innerHTML='<input type="checkbox" '+(visible?'checked':'')+' aria-label="'+safe(name)+'"><span>'+safe(name)+(desc?'<div class="layer-desc">'+safe(desc)+'</div>':'')+'</span><button class="zoom" title="Ir a capa">⌖</button>';
+ host.appendChild(label);
+ let ck=label.querySelector('input');ck.addEventListener('change',()=>{if(ck.checked){layer.addTo(map);zoomLayer(layer)}else map.removeLayer(layer)});
+ label.querySelector('button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();ck.checked=true;layer.addTo(map);zoomLayer(layer)});
+ return layer;
+}
 function zoomLayer(layer){let bounds=layer.getBounds?.();if(bounds?.isValid()){map.flyToBounds(bounds.pad(.12),{duration:.7,maxZoom:14});}else document.getElementById('status').textContent='Este catálogo contiene registros sin coordenadas; consulta las fichas del panel para ubicarlos por su dirección.';}
 function filt(g,check){return {...g,features:g.features.filter(check)}};
 // Al iniciar solo se muestra el callejero base. El visitante activa las capas temáticas cuando quiera.
@@ -79,15 +157,15 @@ for(const conjunto of [D.hitos,D.culturales,D.estaciones,D.cmn]){
   }
  }
 }
-const roads=register('roads','Red vial principal',D.roads,{color:'#9b9f9a',weight:2,opacity:.72},null,false,'roadsLayers','Red municipal de calles y caminos');
+const roads=register('roads','Red vial principal',D.roads,{color:ROAD_COLOR,weight:2,opacity:.82},null,false,'roadsLayers','Red municipal de calles y caminos');
 register('metropolitan','Parques Metropolitanos · Plan Regulador Metropolitano de Santiago',D.parques,{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'natureLayers');
 register('protection','Protección ecológica · Plan Regulador Metropolitano de Santiago',D.proteccion,{color:'#347554',weight:1.5,fillColor:'#4c9b65',fillOpacity:.12},null,false,'natureLayers');
 register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'natureLayers');
 // Cada río y estero se sirve en una capa específica desde datos/cauces_paine_individuales.geojson.
 register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'roadsLayers');
 register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',false,'roadsLayers');
-register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:'#dc8821',weight:5,opacity:.9},null,false,'roadsLayers');
-register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:'#9e42a7',weight:4,opacity:.9},null,false,'roadsLayers');
+register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'roadsLayers');
+register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'roadsLayers');
 register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',false,'attractionLayers');
 register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',false,'attractionLayers');
 register('plaza','Plaza de Armas de Paine · polígono del proyecto',D.plaza,{color:'#b51c80',weight:3,fillColor:'#eaaa4a',fillOpacity:.35},null,false,'attractionLayers','Ámbito del proyecto municipal de mejoramiento integral');
@@ -108,7 +186,7 @@ fetch('datos/corredores_turisticos.geojson',{cache:'no-store'})
 .then(g=>{
  for(const f of g.features||[]){
   const q=f.properties;
-  register('corridor-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:q.color||'#db6c25',weight:5,opacity:.95},null,false,'corridorLayers','Trazado simplificado de referencia');
+  register('corridor-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'corridorLayers','Trazado simplificado de referencia');
  }
 })
 .catch(err=>{console.warn(err);document.getElementById('corridorLayers').textContent='No fue posible cargar estas rutas. Recarga la página.'});
@@ -184,7 +262,7 @@ fetch('datos/conexion_valdivia_paine_vial.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No se pudo cargar conexión vial')))
 .then(g=>{for(const f of g.features||[]){
  const q=f.properties||{};
- register('tramo-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:q.rol==='G-500'?'#d54b42':'#713fa0',weight:5,opacity:.95},null,false,'corridorLayers','Trazado de red vial KMZ aportada; activa la casilla para visualizar');
+ register('tramo-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'corridorLayers','Trazado de red vial KMZ aportada; activa la casilla para visualizar');
 }})
 .catch(err=>console.warn('Conexión vial Valdivia de Paine:',err));
 fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
@@ -206,7 +284,7 @@ fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 .catch(err=>console.warn('No se cargó reserva El Ajial',err));
 
 // Capa hidrográfica interpretativa: textos completos a la izquierda; lectura geográfica y controles a la derecha.
-const hydroColors=['#146DAB','#217A92','#268A78','#5B60A5','#4875AD','#98668F','#8568A6','#417DB1','#14859A','#3E9090','#5F78A6'];
+const hydroColors=Array(10).fill(CYAN_WATER);
 const hydroList=document.getElementById('hydroLayers'),poems=document.getElementById('hydroPoetry');
 window.abrirCauces=()=>{
  const panel=document.getElementById('hydroSection');
@@ -232,7 +310,7 @@ fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
     const collection={type:'FeatureCollection',features:g.features.filter(f=>f.properties?.id===item.id)};
     if(!collection.features.length)continue;
     const color=hydroColors[i%hydroColors.length];
-    const style={color,weight:4,opacity:.95,dashArray:i%3===0?'9,4':i%3===1?'':'3,6'};
+    const style={color,weight:4,opacity:.98};
     const layer=lay(collection,style);
     layerMap['hidro-'+item.id]={layer,name:item.nombre,visible:false,desc:item.descripcion_geo};
     // El panel izquierdo conserva la voz narrativa; la ficha derecha NO la repite.
@@ -263,7 +341,7 @@ const captions={'Paine Centro':'Entre la estación, las casonas y los encuentros
 D.areas.features.forEach((f,i)=>{let name=nombreCorregido(f.properties.nombre_corto),id='urban'+i;let layer=lay({type:'FeatureCollection',features:[f]},{color:'#cb3e86',weight:3,fillColor:'#f9da81',fillOpacity:.16});layerMap[id]={layer,name};let el=document.createElement('label');el.className='listing';el.innerHTML='<input type="checkbox"><div class="body"><strong>'+safe(name)+'</strong><small>'+safe(captions[name]||'Una localidad para recorrer y descubrir.')+'</small></div><button class="go" title="Ir al área urbana">↗</button>';document.getElementById('urbanList').appendChild(el);el.querySelector('input').onchange=e=>e.target.checked?layer.addTo(map):map.removeLayer(layer);const jump=()=>{layer.addTo(map);el.querySelector('input').checked=true;zoomLayer(layer);layer.bringToFront()};el.querySelector('button').onclick=jump;el.querySelector('.body').onclick=jump;});
 // Additional verified road classes, selectable individually
 let kinds=[['Ruta 5 Sur',/RUTA 5|PANAMERICANA|LONGITUDINAL/],['Acceso Sur',/ACCESO SUR/],['Padre Hurtado',/PADRE HURTADO|G-45/],['Camino a Chada',/CHADA|G-515/],['Champa–Hospital',/CHAMPA|HOSPITAL|G-546/],['Pintué–Rangue',/PINTU|RANGUE|G-54/]];
-kinds.forEach(([name,re],i)=>{let g=filt(D.roads,f=>re.test(String(f.properties.NOMBRE_CAL||'')+' '+String(f.properties.LOCALIDAD||'')));if(g.features.length)register('road'+i,name,g,{color:'#dc8821',weight:3,opacity:.9},null,false,'roadsLayers')});
+kinds.forEach(([name,re],i)=>{let g=filt(D.roads,f=>re.test(String(f.properties.NOMBRE_CAL||'')+' '+String(f.properties.LOCALIDAD||'')));if(g.features.length)register('road'+i,name,g,{color:ROAD_COLOR,weight:3,opacity:.92},null,false,'roadsLayers')});
 function setBase(type){
  if(base){map.removeLayer(base);base=null}
  const url=baseDefs[type];
@@ -279,7 +357,7 @@ function setBase(type){
 }
 document.querySelectorAll('input[name="base"]').forEach(i=>i.onchange=()=>setBase(i.value));
 document.querySelector('input[name="base"][value="osm"]').checked=true;setBase('osm');
-window.toggleAndFocus=id=>{let v=layerMap[id];if(!v)return;v.layer.addTo(map);zoomLayer(v.layer);document.querySelectorAll('label.layer').forEach(el=>{if(el.textContent.includes(v.name))el.querySelector('input').checked=true})};
+window.toggleAndFocus=id=>{let v=layerMap[id];if(!v)return;if(v.activateAll)v.activateAll();v.layer.addTo(map);zoomLayer(v.layer);document.querySelectorAll('label.layer').forEach(el=>{if(el.textContent.includes(v.name))el.querySelector('input').checked=true})};
 window.focusPoint=(lat,lon,z,name)=>{
  if(String(name).toLowerCase().includes('municipalidad de paine')){lat=MUNICIPIO_LAT;lon=MUNICIPIO_LON;}
  const layers=featureLookup.get(nombreCorregido(name))||[];
@@ -287,11 +365,12 @@ window.focusPoint=(lat,lon,z,name)=>{
  if(target){
    for(const item of Object.values(layerMap)){if(item.layer?.hasLayer?.(target)&&!map.hasLayer(item.layer)){item.layer.addTo(map);}}
    map.flyTo([lat,lon],z,{duration:.6});
-   setTimeout(()=>target.openPopup(),650);
+   destacarCapa(target);setTimeout(()=>target.openPopup(),650);
    return;
  }
  const point={type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{nombre:name,categoria:'Hito turístico',relato:'Descubre este lugar en el paisaje de Paine, sus historias y sus caminos.'}};
  const marker=L.circleMarker([lat,lon],{radius:9,fillColor:'#f7bf3b',color:'#b51c80',fillOpacity:1}).addTo(map);
+ destacarCapa(marker);
  marker.bindPopup(()=>popup(point,marker),{maxWidth:360});
  map.flyTo([lat,lon],z,{duration:.6});setTimeout(()=>marker.openPopup(),650);
 };
