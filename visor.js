@@ -2,6 +2,20 @@
 let BULK_MODE=false;
 const ROAD_COLOR='#4D6072';
 const CYAN_WATER='#00B6D1';
+// Decodificador EPSG:4326 para polilíneas KMZ simplificadas; sin unir tramos con líneas inventadas.
+function decodeRuta(linea){
+ let lat=0,lon=0,i=0,pts=[];
+ while(i<linea.length){
+  let r=0,shift=0,b;
+  do{b=linea.charCodeAt(i++)-63;r|=(b&31)<<shift;shift+=5;}while(b>=32);
+  lat+=(r&1)?~(r>>1):(r>>1);r=0;shift=0;
+  do{b=linea.charCodeAt(i++)-63;r|=(b&31)<<shift;shift+=5;}while(b>=32);
+  lon+=(r&1)?~(r>>1):(r>>1);
+  pts.push([lon/100000,lat/100000]);
+ }
+ return pts;
+}
+
 const baseDefs={osm:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',sat:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'};let base=null;const layerMap={};const featureLookup=new Map();let selection=null;
 const safe=s=>String(s??'').replace(/[&<>"']/g,a=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[a]));
 const nombreCorregido=v=>String(v||'').replace(/\bHuelquen\b/gi,'Huelquén').replace(/\bEl Transito\b/gi,'El Tránsito').replace(/\bPintue\b/gi,'Pintué').replace(/\bHuiticalan\b/gi,'Huiticalán');const n=f=>nombreCorregido(f.properties?.nombre||f.properties?.nombre_corto||f.properties?.LOCALIDAD||f.properties?.NOMBRE||f.properties?.NOMBRE_CAL||'Hito de Paine').replace(/\s*\(tramo turístico base\)/gi,'').trim();
@@ -101,7 +115,7 @@ function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLay
 function register(id,name,geo,style,color,visible,target,desc){
  let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};
  const host=document.getElementById(target);
- if(target==='natureLayers'){
+ if(['natureLayers','parksLayers','protectedLayers','mountainsLayers'].includes(target)){
    const box=document.createElement('details');box.className='environment-item';
    const title=document.createElement('summary');title.textContent=name;box.appendChild(title);
    const body=document.createElement('div');body.className='environment-body';
@@ -114,7 +128,7 @@ function register(id,name,geo,style,color,visible,target,desc){
    zoom.addEventListener('click',()=>{input.checked=true;layer.addTo(map);zoomLayer(layer);});
    box.appendChild(body);host.appendChild(box);return layer;
  }
- if(target==='attractionLayers'){
+ if(['attractionLayers','stationsLayers'].includes(target)){
    const children=layer.getLayers();layer.clearLayers();
    layerMap[id].featureIndex=new Map(children.filter(x=>x.feature?.properties?.id).map(x=>[x.feature.properties.id,x]));
    const outer=document.createElement('details');outer.className='attraction-group';
@@ -194,15 +208,19 @@ for(const conjunto of [D.hitos,D.culturales,D.estaciones,D.cmn]){
 // Fotografías originales aportadas por el municipio para las fichas cartográficas.
 for(const feat of D.plaza?.features||[]){feat.properties=feat.properties||{};feat.properties.foto='imagenes/hitos/plaza_armas_usuario.webp';}
 for(const feat of D.routes?.padre?.features||[]){feat.properties=feat.properties||{};feat.properties.foto='imagenes/hitos/huelquen_maipo_andes_usuario.webp';}
-const roads=register('roads','Red vial principal',D.roads,{color:ROAD_COLOR,weight:2,opacity:.82},null,false,'roadsLayers','Red municipal de calles y caminos');
-register('metropolitan','Parques Metropolitanos · Plan Regulador Metropolitano de Santiago',D.parques,{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'natureLayers');
-register('protection','Protección ecológica · Plan Regulador Metropolitano de Santiago',D.proteccion,{color:'#347554',weight:1.5,fillColor:'#4c9b65',fillOpacity:.12},null,false,'natureLayers');
-register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'natureLayers');
+// La red vial principal anterior fue sustituida por el nuevo KMZ de vialidades.
+for(const [i,park] of (D.parques?.features||[]).entries()){
+ const name=n(park);
+ register('parque-prms-'+i,name==='Hito de Paine'?'PARQUE METROPOLITANO '+(i+1):tituloHito(name),
+  {type:'FeatureCollection',features:[park]},{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'parksLayers');
+}
+// Las nuevas áreas PRMS se cargan desde AREAS PRMS.zip, no desde la antigua capa genérica.
+register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'hiddenLayers');
 // Cada río y estero se sirve en una capa específica desde datos/cauces_paine_individuales.geojson.
 register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'roadsLayers');
-register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',false,'roadsLayers');
-register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'roadsLayers');
-register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'roadsLayers');
+register('train-stops','ESTACIONES PAINE, HOSPITAL Y REFERENCIA ESTACIÓN CENTRAL',D.estaciones,{},'#305b83',false,'stationsLayers');
+register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
+register('padre','Ruta de la Montaña y sus Viñas · Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
 // Los dos nuevos KMZ son la referencia cartográfica única de estos espacios de memoria.
 // Evitar el antiguo punto del Memorial y eventuales duplicados de EFE en otras capas.
 const esMemoriaActualizada=feat=>{
@@ -212,10 +230,10 @@ const esMemoriaActualizada=feat=>{
 for(const base of [D.hitos,D.culturales,D.cmn]){
  if(Array.isArray(base?.features))base.features=base.features.filter(f=>!esMemoriaActualizada(f));
 }
-register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',false,'attractionLayers');
-register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',false,'attractionLayers');
-register('plaza','Plaza de Armas de Paine · polígono del proyecto',D.plaza,{color:'#b51c80',weight:3,fillColor:'#eaaa4a',fillOpacity:.35},null,false,'attractionLayers','Ámbito del proyecto municipal de mejoramiento integral');
-register('tricolor','Estadio Municipal Tricolor',D.tricolor,{color:'#b92378',weight:2,fillColor:'#ffbfdb',fillOpacity:.32},null,false,'attractionLayers');
+register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',false,'hiddenLayers');
+register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',false,'hiddenLayers');
+register('plaza','Plaza de Armas de Paine · polígono del proyecto',D.plaza,{color:'#b51c80',weight:3,fillColor:'#eaaa4a',fillOpacity:.35},null,false,'hiddenLayers','Ámbito del proyecto municipal de mejoramiento integral');
+register('tricolor','Estadio Municipal Tricolor',D.tricolor,{color:'#b92378',weight:2,fillColor:'#ffbfdb',fillOpacity:.32},null,false,'hiddenLayers');
 // Dos hitos de memoria añadidos con coordenadas exactas de los KMZ entregados.
 window.abrirLugarMemoria=id=>{
  const ref=layerMap['lugares-memoria'];
@@ -237,27 +255,29 @@ fetch('datos/lugares_memoria_paine_2026.geojson',{cache:'no-store'})
  register('lugares-memoria','Lugares de memoria y derechos humanos',g,{},'#66236f',false,'attractionLayers');
 })
 .catch(err=>{console.warn('Lugares de memoria:',err);document.getElementById('status').textContent='No se pudieron cargar los hitos de memoria: '+err.message;});
-register('cmn','Monumentos Nacionales · CMN',D.cmn,{},'#c37b2e',false,'heritageLayers');
-register('lodgings','Alojamientos · Paine 2025',D.alojamientos,{},'#598447',false,'lodgingLayers');
-register('catastro','Catastro Territorial de Atractivos y Lugares de Interés Turístico · diciembre 2025',D.catastro,{},'#91664e',false,'catalogLayers');
-register('architecture','Patrimonio arquitectónico · PRC 2013',D.patrimonio,{},'#704b4b',false,'archLayers');
-register('limites','Áreas urbanas PRC — referencia de límites de localidades',D.areas,{color:'#ba4494',weight:2,fillColor:'#fff5c2',fillOpacity:.07},null,false,'roadsLayers');
+register('cmn','Monumentos Nacionales · CMN',D.cmn,{},'#c37b2e',false,'hiddenLayers');
+register('lodgings','Alojamientos · Paine 2025',D.alojamientos,{},'#598447',false,'hiddenLayers');
+register('catastro','Catastro Territorial de Atractivos y Lugares de Interés Turístico · diciembre 2025',D.catastro,{},'#91664e',false,'hiddenLayers');
+register('architecture','Patrimonio arquitectónico · PRC 2013',D.patrimonio,{},'#704b4b',false,'hiddenLayers');
+register('limites','Áreas urbanas PRC',D.areas,{color:'#ba4494',weight:2,fillColor:'#fff5c2',fillOpacity:.07},null,false,'hiddenLayers');
 // Localidades censales en una capa informativa separada de áreas urbanas y límite administrativo.
 fetch('datos/localidades_censo_2024.geojson',{cache:'no-store'})
  .then(r=>r.ok?r.json():Promise.reject(Error('Capa de localidades no disponible')))
  .then(gj=>register('localidades','40 localidades · Censo 2024',gj,{color:'#2f826a',weight:2,fillColor:'#68b9a1',fillOpacity:.14},null,false,'localityLayers','Polígonos censales; no corresponden al límite comunal'))
  .catch(err=>{console.warn(err);document.getElementById('localityLayers').textContent='No fue posible cargar esta capa. Inténtalo nuevamente.'});
 
-fetch('datos/corredores_turisticos.geojson',{cache:'no-store'})
-.then(r=>r.ok?r.json():Promise.reject(Error('No se cargaron las rutas destacadas')))
-.then(g=>{
- for(const f of g.features||[]){
-  const q=f.properties;
-  register('corridor-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'corridorLayers','Trazado simplificado de referencia');
+// Vialidades originales reunidas por rol. Una capa por camino; misma simbología institucional.
+fetch('datos/vialidades_kmz_unificadas_polyline.json',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No se pudo cargar vialidades KMZ')))
+.then(data=>{
+ for(const [rol,segments] of Object.entries(data.polylines||{})){
+  // Se conserva la Ruta 5 dentro del conjunto vial, sin añadir trazados base duplicados.
+  const label=rol==='G-555'?'Ruta cerros camino a Angostura':rol==='G-500'?'Ruta Camino Abrantes-Peralillo':rol==='G-45-H'?'Camino Padre Hurtado · G-45-H':rol==='Ruta 79'?'Acceso Sur · Ruta 79':rol;
+  const f={type:'Feature',properties:{id:'VIAL-'+rol,nombre:label,categoria:'Vías consolidadas',rol,fuente:'VIALIDADES (2).zip'},geometry:{type:'MultiLineString',coordinates:segments.map(decodeRuta)}};
+  register('via-'+rol,label,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:3.4,opacity:.94},null,false,'roadsLayers');
  }
 })
-.catch(err=>{console.warn(err);document.getElementById('corridorLayers').textContent='No fue posible cargar estas rutas. Recarga la página.'});
-
+.catch(err=>{console.warn('Vialidades KMZ:',err);const el=document.getElementById('roadsLayers');if(el)el.textContent='No se pudieron cargar los caminos. Actualiza la página.'});
 // Nuevos puntos georreferenciados del KMZ turístico 2026. Se agrupan por tipo, no se mezclan con el catastro sin coordenadas.
 const kmzGrupos=[
   {key:'gastronomia',cat:'Gastronomía y productos locales',label:'Sabores y productos de Paine',color:'#d47733',defaultOn:false},
@@ -344,13 +364,6 @@ window.mostrarKmz=key=>{
  let bounds=L.latLngBounds(item.entries.map(x=>x.marker.getLatLng()));if(bounds.isValid())map.flyToBounds(bounds.pad(.14),{maxZoom:14});
 };
 
-fetch('datos/conexion_valdivia_paine_vial.geojson',{cache:'no-store'})
-.then(r=>r.ok?r.json():Promise.reject(Error('No se pudo cargar conexión vial')))
-.then(g=>{for(const f of g.features||[]){
- const q=f.properties||{};
- register('tramo-'+q.id,q.nombre,{type:'FeatureCollection',features:[f]},{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'corridorLayers','Trazado de red vial KMZ aportada; activa la casilla para visualizar');
-}})
-.catch(err=>console.warn('Conexión vial Valdivia de Paine:',err));
 fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No se pudo abrir el inventario de KMZ')))
 .then(g=>{
@@ -361,7 +374,7 @@ fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
 .catch(err=>{console.error(err);document.getElementById('kmzInfo').textContent='No se pudo abrir la capa KMZ: '+err.message;});
 fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No disponible')))
-.then(g=>register('ajial','El Ajial · área natural (KMZ)',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers','Polígono KMZ aportado, sujeto a validación'))
+.then(g=>register('ajial','El Ajial · área natural',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers'))
 .catch(err=>console.warn('No se cargó reserva El Ajial',err));
 
 // Capa hidrográfica interpretativa: textos completos a la izquierda; lectura geográfica y controles a la derecha.
@@ -371,13 +384,13 @@ const hydroAll=document.getElementById('hydroAll');
 if(hydroAll)hydroAll.addEventListener('change',()=>{BULK_MODE=true;for(const x of document.querySelectorAll('#hydroLayers .water-label input')){if(x.checked!==hydroAll.checked){x.checked=hydroAll.checked;x.dispatchEvent(new Event('change'));}}BULK_MODE=false;});
 const syncAllHydro=()=>{const a=[...document.querySelectorAll('#hydroLayers .water-label input')];if(!hydroAll||!a.length)return;const n=a.filter(x=>x.checked).length;hydroAll.checked=n===a.length;hydroAll.indeterminate=n>0&&n<a.length;};
 window.abrirCauces=()=>{
- const panel=document.getElementById('hydroSection');
- if(panel){panel.open=true;document.querySelectorAll('aside').forEach(el=>el.classList.remove('mobile-open'));document.getElementById('right').classList.add('mobile-open');panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
+ const panel=document.getElementById('hydroLeftSection');
+ if(panel){panel.open=true;document.getElementById('left').classList.add('mobile-open');panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
 };
 window.verCauce=(id)=>{
  const key='hidro-'+id,entry=layerMap[key];
  if(!entry){document.getElementById('status').textContent='La ficha de este estero todavía se está cargando.';return;}
- const section=document.getElementById('hydroSection');
+ const section=document.getElementById('hydroLeftSection');
  if(section)section.open=true;
  const item=document.getElementById('hydro-item-'+id);
  if(item)item.open=true;
@@ -475,7 +488,7 @@ fetch('datos/limite_comunal_paine.geojson',{cache:'no-store'}).then(r=>r.ok?r.js
  .then(geo=>{
     if(!geo.features||!geo.features.length)throw Error('Sin geometrías');
     estadoLim.remove();
-    register('limite-comunal','Límite comunal corregido · Paine',geo,{color:'#e12f80',weight:3,fillOpacity:0,dashArray:'8,5'},null,false,'roadsLayers','Fuente: archivo municipal');
+    register('limite-comunal','Límite comunal Paine',geo,{color:'#e12f80',weight:3,fillOpacity:0,dashArray:'8,5'},null,false,'boundaryLayers');
  })
  .catch(()=>{});
 })();
