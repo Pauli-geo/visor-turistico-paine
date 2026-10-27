@@ -1,9 +1,10 @@
 (()=>{'use strict';const D=window.VISOR_DATA;const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([-33.835,-70.79],11);L.control.zoom({position:'bottomright'}).addTo(map);L.control.scale({metric:true,imperial:false,position:'bottomright'}).addTo(map);
+let BULK_MODE=false;
 const ROAD_COLOR='#4D6072';
 const CYAN_WATER='#00B6D1';
 const baseDefs={osm:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',sat:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'};let base=null;const layerMap={};const featureLookup=new Map();let selection=null;
 const safe=s=>String(s??'').replace(/[&<>"']/g,a=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[a]));
-const nombreCorregido=v=>String(v||'').replace(/\bHuelquen\b/gi,'Huelquén').replace(/\bEl Transito\b/gi,'El Tránsito').replace(/\bPintue\b/gi,'Pintué').replace(/\bHuiticalan\b/gi,'Huiticalán');const n=f=>nombreCorregido(f.properties?.nombre||f.properties?.nombre_corto||f.properties?.LOCALIDAD||f.properties?.NOMBRE||f.properties?.NOMBRE_CAL||'Hito de Paine');
+const nombreCorregido=v=>String(v||'').replace(/\bHuelquen\b/gi,'Huelquén').replace(/\bEl Transito\b/gi,'El Tránsito').replace(/\bPintue\b/gi,'Pintué').replace(/\bHuiticalan\b/gi,'Huiticalán');const n=f=>nombreCorregido(f.properties?.nombre||f.properties?.nombre_corto||f.properties?.LOCALIDAD||f.properties?.NOMBRE||f.properties?.NOMBRE_CAL||'Hito de Paine').replace(/\s*\(tramo turístico base\)/gi,'').trim();
 const hav=(a,b)=>{let rad=Math.PI/180,da=(a[0]-b[0])*rad,db=(a[1]-b[1])*rad,x=Math.sin(da/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(db/2)**2;return (2*6371*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1)};
 const coords=f=>f.geometry?.type==='Point'?[f.geometry.coordinates[1],f.geometry.coordinates[0]]:null;
 const pics={
@@ -102,7 +103,7 @@ function register(id,name,geo,style,color,visible,target,desc){
    label.appendChild(input);label.appendChild(document.createTextNode('Mostrar esta capa'));body.appendChild(label);
    if(desc){const p=document.createElement('p');p.className='layer-desc';p.textContent=desc;body.appendChild(p);}
    const zoom=document.createElement('button');zoom.type='button';zoom.className='zoom';zoom.textContent='⌖ Localizar';body.appendChild(zoom);
-   input.addEventListener('change',()=>{input.checked?layer.addTo(map):map.removeLayer(layer);if(input.checked)zoomLayer(layer);});
+   input.addEventListener('change',()=>{input.checked?layer.addTo(map):map.removeLayer(layer);if(input.checked&&!BULK_MODE)zoomLayer(layer);});
    zoom.addEventListener('click',()=>{input.checked=true;layer.addTo(map);zoomLayer(layer);});
    box.appendChild(body);host.appendChild(box);return layer;
  }
@@ -144,9 +145,30 @@ function register(id,name,geo,style,color,visible,target,desc){
  let label=document.createElement('label');label.className='layer';
  label.innerHTML='<input type="checkbox" '+(visible?'checked':'')+' aria-label="'+safe(name)+'"><span>'+safe(name)+(desc?'<div class="layer-desc">'+safe(desc)+'</div>':'')+'</span><button class="zoom" title="Ir a capa">⌖</button>';
  host.appendChild(label);
- let ck=label.querySelector('input');ck.addEventListener('change',()=>{if(ck.checked){layer.addTo(map);zoomLayer(layer)}else map.removeLayer(layer)});
+ let ck=label.querySelector('input');ck.addEventListener('change',()=>{if(ck.checked){layer.addTo(map);if(!BULK_MODE)zoomLayer(layer)}else map.removeLayer(layer)});
  label.querySelector('button').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();ck.checked=true;layer.addTo(map);zoomLayer(layer)});
  return layer;
+}
+// Controles generales para grupos de infraestructura y áreas ambientales.
+for(const [controlId,containerId] of [
+ ['roadsAll','roadsLayers'],['corridorsAll','corridorLayers'],['natureAll','natureLayers']
+]){
+ const mainCheck=document.getElementById(controlId),holder=document.getElementById(containerId);
+ if(!mainCheck||!holder)continue;
+ mainCheck.addEventListener('change',()=>{
+  BULK_MODE=true;
+  for(const check of holder.querySelectorAll('input[type="checkbox"]')){
+   if(check.checked!==mainCheck.checked){check.checked=mainCheck.checked;check.dispatchEvent(new Event('change'));}
+  }
+  BULK_MODE=false;
+ });
+ holder.addEventListener('change',()=>{
+  const controls=[...holder.querySelectorAll('input[type="checkbox"]')];
+  if(!controls.length)return;
+  const selected=controls.filter(x=>x.checked).length;
+  mainCheck.checked=selected===controls.length;
+  mainCheck.indeterminate=selected>0&&selected<controls.length;
+ });
 }
 function zoomLayer(layer){let bounds=layer.getBounds?.();if(bounds?.isValid()){map.flyToBounds(bounds.pad(.12),{duration:.7,maxZoom:14});}else document.getElementById('status').textContent='Este catálogo contiene registros sin coordenadas; consulta las fichas del panel para ubicarlos por su dirección.';}
 function filt(g,check){return {...g,features:g.features.filter(check)}};
@@ -308,7 +330,7 @@ fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 const hydroColors=Array(10).fill(CYAN_WATER);
 const hydroList=document.getElementById('hydroLayers'),poems=document.getElementById('hydroPoetry');
 const hydroAll=document.getElementById('hydroAll');
-if(hydroAll)hydroAll.addEventListener('change',()=>{for(const x of document.querySelectorAll('#hydroLayers .water-label input')){if(x.checked!==hydroAll.checked){x.checked=hydroAll.checked;x.dispatchEvent(new Event('change'));}}});
+if(hydroAll)hydroAll.addEventListener('change',()=>{BULK_MODE=true;for(const x of document.querySelectorAll('#hydroLayers .water-label input')){if(x.checked!==hydroAll.checked){x.checked=hydroAll.checked;x.dispatchEvent(new Event('change'));}}BULK_MODE=false;});
 const syncAllHydro=()=>{const a=[...document.querySelectorAll('#hydroLayers .water-label input')];if(!hydroAll||!a.length)return;const n=a.filter(x=>x.checked).length;hydroAll.checked=n===a.length;hydroAll.indeterminate=n>0&&n<a.length;};
 window.abrirCauces=()=>{
  const panel=document.getElementById('hydroSection');
@@ -353,7 +375,7 @@ fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
     const controls=document.createElement('div');controls.className='water-controls';
     const label=document.createElement('label');label.className='water-label';
     const check=document.createElement('input');check.type='checkbox';check.id='hydro-check-'+item.id;check.checked=false;
-    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);zoomLayer(layer);}else{map.removeLayer(layer)}syncAllHydro();});
+    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);if(!BULK_MODE)zoomLayer(layer);}else{map.removeLayer(layer)}syncAllHydro();});
     label.appendChild(check);label.appendChild(document.createTextNode('Mostrar en el mapa'));
     const zoom=document.createElement('button');zoom.className='zoom';zoom.type='button';zoom.textContent='⌖ Acercar';zoom.addEventListener('click',()=>window.verCauce(item.id));
     controls.appendChild(label);controls.appendChild(zoom);body.appendChild(controls);detail.appendChild(body);hydroList.appendChild(detail);
