@@ -278,15 +278,56 @@ fetch('datos/vialidades_kmz_unificadas_polyline.json',{cache:'no-store'})
  }
 })
 .catch(err=>{console.warn('Vialidades KMZ:',err);const el=document.getElementById('roadsLayers');if(el)el.textContent='No se pudieron cargar los caminos. Actualiza la página.'});
+// Cinco áreas del Plan Regulador Metropolitano de Santiago, desde los KMZ/KML aportados.
+// Geometrías visuales generalizadas: consultar KML originales para los deslindes oficiales.
+const PRMS_AREAS={
+ 'PRMS-ACULEO-VALLE':{
+ nombre:'Área de Protección Ecológica con Desarrollo Controlado - P. E. D. C. 6 Laguna de Aculeo Valle',
+ grupo:'protectedLayers',color:'#2b8c77',
+ descripcion:'Corresponde a un área de interés turístico - paisajístico emplazado en la comuna de Paine, en la cual, por encontrarse dentro de un área legalmente protegida por el Ministerio de Agricultura, se deberá cautelar y reforzar el valor ambiental, turístico y paisajístico de su entorno. Comprende el territorio que se encuentra emplazado a partir del borde de la Laguna de Aculeo, hasta la cota 400 m.s.n.m.'},
+ 'PRMS-PIE-DE-MONTE':{
+ nombre:'Área de Protección Ecológica con Desarrollo Controlado - P. E. D. C. 6 Laguna de Aculeo Pie de Monte',
+ grupo:'protectedLayers',color:'#397e59',
+ descripcion:'Corresponde a un área de interés turístico - paisajístico emplazado en la comuna de Paine, en la cual, por encontrarse dentro de un área legalmente protegida por el Ministerio de Agricultura, se deberá cautelar y reforzar el valor ambiental, turístico y paisajístico de su entorno. Comprende el territorio emplazado sobre la cota 400 m.s.n.m., hasta la cota 600 m.s.n.m.'},
+ 'PRMS-LA-VACADA':{
+ nombre:'Área de Protección Prioritaria La Vacada de Huelquén',
+ grupo:'protectedLayers',color:'#648c42',
+ descripcion:'Área de Protección de Ecosistemas Vegetacionales. Cordillera Andina, sector Estero El Escorial (contiguo a la Reserva Nacional El Clarillo).'},
+ 'PRMS-CANTILLANA':{
+ nombre:'Área de Protección Prioritaria: Área de Conservación de Fauna Silvestre Sector Cantillana',
+ grupo:'protectedLayers',color:'#456d70',
+ descripcion:'Área de Protección de Ecosistemas Faunísticos; prohibida de caza, controlada por S.A.G. RM.'},
+ 'PRMS-CORDONES':{
+ nombre:'Cordones Montañosos',
+ grupo:'mountainsLayers',color:'#837c54',
+ descripcion:'Área donde se propende a mantener y conservar las características del entorno natural e incrementar los valores paisajísticos, los recursos naturales y ambientales.'}
+};
+fetch('datos/prms_areas_kmz_polyline.json',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No fue posible cargar áreas PRMS')))
+.then(g=>{
+ for(const [id,encoded] of Object.entries(g.polylines||{})){
+  const meta=PRMS_AREAS[id];if(!meta)continue;
+  const ring=decodeRuta(encoded);
+  const f={type:'Feature',properties:{id,nombre:meta.nombre,descripcion:meta.descripcion,fuente:'AREAS PRMS.zip',precision:'Geometría generalizada para el mapa web'},geometry:{type:'Polygon',coordinates:[ring]}};
+  register('area-'+id,meta.nombre,{type:'FeatureCollection',features:[f]},{color:meta.color,weight:2,fillColor:meta.color,fillOpacity:.14},null,false,meta.grupo,meta.descripcion);
+ }
+})
+.catch(err=>console.warn('Áreas PRMS:',err));
 // Nuevos puntos georreferenciados del KMZ turístico 2026. Se agrupan por tipo, no se mezclan con el catastro sin coordenadas.
 const kmzGrupos=[
-  {key:'gastronomia',cat:'Gastronomía y productos locales',label:'Sabores y productos de Paine',color:'#d47733',defaultOn:false},
-  {key:'alojamientos',cat:'Alojamientos y camping',label:'Alojamientos y camping',color:'#528b50',defaultOn:false},
-  {key:'vinas',cat:'Viñas y enoturismo',label:'Viñas y enoturismo',color:'#9d529c',defaultOn:false},
-  {key:'patrimonio',cat:'Patrimonio e historia',label:'Patrimonio e historia',color:'#bb557b',defaultOn:false},
-  {key:'naturaleza',cat:'Naturaleza y paisaje',label:'Naturaleza y paisaje',color:'#268a69',defaultOn:true},
-  {key:'experiencias',cat:'Experiencias y eventos',label:'Experiencias y eventos',color:'#ca8945',defaultOn:false},
-  {key:'comunidad',cat:'Patrimonio comunitario',label:'Patrimonio comunitario',color:'#527caf',defaultOn:false}
+ {key:'alojamiento',cat:'ALOJAMIENTOS',label:'ALOJAMIENTOS',color:'#5b874c'},
+ {key:'cafeterias',cat:'CAFETERIAS Y PASTELERIAS-PANADERIAS',label:'CAFETERÍAS, PASTELERÍAS Y PANADERÍAS',color:'#b58251'},
+ {key:'restaurantes',cat:'RESTORANES, RESTAURANES Y BARES',label:'RESTAURANTES Y BARES',color:'#9a6645'},
+ {key:'cervecerias',cat:'CERVECERÍAS',label:'CERVECERÍAS',color:'#916b3a'},
+ {key:'camping',cat:'CAMPING',label:'CAMPING',color:'#668a51'},
+ {key:'eventos',cat:'CENTROS DE EVENTOS',label:'CENTROS DE EVENTOS',color:'#ad734e'},
+ {key:'vinas',cat:'VIÑAS',label:'VIÑAS',color:'#8a5998'},
+ {key:'emprendimientos',cat:'EMPRENDIMIENTOS',label:'EMPRENDIMIENTOS',color:'#a87a5b'},
+ {key:'apr',cat:'APR',label:'APR',color:'#4193aa'},
+ {key:'iglesias',cat:'IGLESIAS',label:'IGLESIAS',color:'#86749d'},
+ {key:'cementerios',cat:'CEMENTERIOS',label:'CEMENTERIOS',color:'#748793'},
+ {key:'cultural',cat:'PATRIMONIO CULTURAL',label:'PATRIMONIO CULTURAL',color:'#934e7e'},
+ {key:'natural',cat:'PATRIMONIO NATURAL - ECOLÓGICO',label:'PATRIMONIO NATURAL - ECOLÓGICO',color:'#4c8f68'}
 ];
 
 // KMZ: temas desplegables, casilla "Mostrar todos" y casilla propia para cada hito.
@@ -364,14 +405,37 @@ window.mostrarKmz=key=>{
  let bounds=L.latLngBounds(item.entries.map(x=>x.marker.getLatLng()));if(bounds.isValid())map.flyToBounds(bounds.pad(.14),{maxZoom:14});
 };
 
-fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
-.then(r=>r.ok?r.json():Promise.reject(Error('No se pudo abrir el inventario de KMZ')))
-.then(g=>{
-  buildKmzCaseIndex(g,kmzGrupos);
-  const info=document.getElementById('kmzInfo');
-  if(info)info.textContent=g.features.length+' hitos georreferenciados, agrupados para explorar sin saturar el mapa.';
-})
-.catch(err=>{console.error(err);document.getElementById('kmzInfo').textContent='No se pudo abrir la capa KMZ: '+err.message;});
+// 119 puntos georreferenciados del ZIP más reciente, asociados a las 13 clases del Excel.
+async function descargarInventarioKmz(){
+ const [raw,previous]=await Promise.all([
+  fetch('datos/atractivos_2026_kmz_puntos.gzip.b64',{cache:'no-store'}).then(r=>r.ok?r.text():Promise.reject(Error('Datos nuevos no disponibles'))),
+  fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'}).then(r=>r.ok?r.json():({features:[]})).catch(()=>({features:[]}))
+ ]);
+ const bytes=Uint8Array.from(atob(raw.trim()),c=>c.charCodeAt(0));
+ const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+ const rows=JSON.parse(await new Response(stream).text());
+ const simple=s=>String(s||'').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+ const originals=new Map();
+ for(const feature of previous.features||[]){
+  const p=feature.properties||{};
+  for(const n of [p.nombre,p.archivo_kmz?.replace(/\.kmz$/i,'')]){
+   if(n)originals.set(simple(n),p);
+  }
+ }
+ const features=rows.filter(r=>!/(MEMORIAL PAINE|ESTADIO FERROVIARIO PAINE)/.test(r[0])).map(([nombre,lat,lon,categoria],i)=>{
+  const original=originals.get(simple(nombre))||{};
+  return {type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},
+   properties:{...original,id:'KMZ-2026-'+i,nombre,categoria:kmzGrupos[categoria]?.cat||'PATRIMONIO CULTURAL',
+     fuente:'ATRACTIVOS TURISTICOS.zip',archivo_kmz:nombre+'.kmz'}};
+ });
+ buildKmzCaseIndex({type:'FeatureCollection',features},kmzGrupos);
+ const info=document.getElementById('kmzInfo');
+ if(info)info.textContent=rows.length+' hitos puntuales georreferenciados en el nuevo ZIP, agrupados por 13 categorías. Se omiten los marcadores duplicados del Memorial y Estadio EFE, que tienen sus propias fichas.';
+}
+descargarInventarioKmz().catch(err=>{
+ console.warn('Inventario del nuevo ZIP:',err);
+ const info=document.getElementById('kmzInfo');if(info)info.textContent='El catálogo no pudo cargarse. Actualiza la página.';
+});
 fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No disponible')))
 .then(g=>register('ajial','El Ajial · área natural',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers'))
