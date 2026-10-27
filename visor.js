@@ -18,24 +18,22 @@ const fotoReferencia=(name,p)=>{
  const editable=(window.FOTOS_HITOS||{})[name];
  if(editable&&editable.archivo)return {url:editable.archivo,note:editable.tipo==='fotografia_del_lugar'?(editable.nota||'Fotografía del lugar'):('Imagen referencial: '+(editable.nota||'entorno de Paine'))};
  if(pics[name])return {url:pics[name],note:''};
- if(p.foto&&/^(imagenes\/|https:\/\/)/.test(p.foto))return {url:p.foto,note:p.foto_estado||'Foto vinculada al hito: verificar atribución'};
+ if(p.foto&&/^(imagenes\/|https:\/\/)/.test(p.foto))return {url:p.foto,note:''};
  const original=p.foto||'';
  if(original&&/^(imagenes\/|https:\/\/)/.test(original))return {url:original,note:p.foto_aclaracion||''};
  if(original&&assets[original])return {url:assets[original],note:p.foto_aclaracion||''};
- if(/pintué/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:'Fotografía del Estero Pintué'};
- if(/laguna|aculeo|humedal|cantillana/i.test(name))return {url:'imagenes/hitos/laguna_aculeo.webp',note:'Fotografía de la Laguna de Aculeo; imagen referencial cuando el sitio seleccionado es otro'};
- if(/río|estero|cauce|agua|peralillo|abrantes/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:'Fotografía del Estero Pintué utilizada como imagen referencial del paisaje hídrico'};
- if(/tren|ferrovia|estación/i.test(name))return {url:'imagenes/hitos/estacion_paine.webp',note:'Fotografía de Estación Paine utilizada como imagen ferroviaria referencial'};
- if(/ruta|camino|acceso|g-54|g-45|g-568|valle/i.test(name))return {url:'imagenes/hitos/laguna_aculeo.webp',note:'Paisaje de Aculeo utilizado como fotografía referencial del entorno de Paine'};
- return {url:'imagenes/hitos/municipalidad.webp',note:'Fotografía aérea de Paine utilizada como referencia visual; no representa necesariamente este lugar'};
+ if(/pintué/i.test(name))return {url:'imagenes/hitos/estero_pintue.webp',note:''};
+ if(/laguna de aculeo/i.test(name))return {url:'imagenes/hitos/laguna_aculeo.webp',note:''};
+ // Nunca asociar fotografías de lugares diferentes a un hito sin evidencia.
+ return {url:'',note:''};
 };
 const relatoDe=(p,name)=>{
  if(p.relato)return p.relato;
  if(p.LOCALIDAD)return 'Cada localidad guarda huellas de la vida rural y de quienes construyen el presente de Paine. Recorre '+name+' y descubre los caminos y paisajes que la rodean.';
  if(/Estero|Río/i.test(name))return 'Escucha el rumor del agua y sigue la huella de '+name+'. Entre cerros, campos y quebradas, este cauce nos invita a conocer el territorio y a cuidar sus ecosistemas.';
  if(/ferroviaria|tren/i.test(String(p.categoria||'')))return 'Sigue las vías que unieron al valle con Santiago: los viajes, las cosechas y las despedidas dibujaron una historia que aún puedes recorrer.';
- if(/camino|ruta|acceso/i.test(name))return 'Toma este camino para descubrir los paisajes, los oficios y la memoria rural de Paine. Cada curva abre una historia distinta del valle.';
- if(/Patrimonio/i.test(String(p.categoria||'')))return 'Las casas y construcciones del pasado narran historias de trabajo y comunidad. Descubre su memoria respetando los espacios privados y las condiciones de visita.';
+ if(/camino|ruta|acceso/i.test(name))return 'Insértate en este camino para descubrir los paisajes, los oficios y la memoria rural de Paine. Cada curva abre una historia distinta del valle.';
+ if(/Patrimonio/i.test(String(p.categoria||'')))return 'Conoce este patrimonio de Paine: sus espacios y construcciones permiten acercarnos a las huellas de quienes vivieron, trabajaron y dieron forma a la comuna.';
  if(/alojamiento/i.test(String(p.categoria||'')))return 'Haz una pausa en Paine y permite que sus paisajes marquen el ritmo de tu viaje; consulta previamente las condiciones de atención.';
  return 'Ven a descubrir '+name+': un lugar donde el paisaje y la historia de Paine se encuentran y esperan tu visita.';
 };
@@ -46,20 +44,20 @@ function popup(f,ly){
  const photo=fotoReferencia(name,p);
  const photoHtml=photo.url?'<img class="ficha-foto" src="'+safe(photo.url)+'" alt="Imagen turística: '+safe(name)+'" loading="lazy" onerror="this.style.display='+"'none'"+'">':'';
  let html='<div class="ficha">'+photoHtml+'<h3>'+safe(name)+'</h3><div class="meta">'+safe(p.categoria||p.categoria_proteccion||p.AREA_C||'Territorio de Paine')+'</div><p>'+safe(relatoDe(p,name))+'</p>';
- if(photo.note)html+='<p class="meta"><i>'+safe(photo.note)+'</i></p>';
- if(p.descripcion&&p.descripcion!==p.relato)html+='<p><b>Información del catastro:</b> '+safe(p.descripcion)+'</p>';
- if(p.texto_guia_2025)html+='<details class="ficha-doc"><summary>Leer descripción del documento turístico 2025</summary><p>'+safe(p.texto_guia_2025)+'</p><p class="meta"><b>Fuente:</b> '+safe(p.fuente_guia_2025||'Guía de Turismo Paine 2025')+'</p></details>';
+ // La ficha pública muestra la fotografía sin leyendas de carácter interno.
+ if(p.descripcion&&p.descripcion!==p.relato)html+='<p>'+safe(p.descripcion)+'</p>';
+ if(p.texto_guia_2025)html+='<details class="ficha-doc"><summary>Conocer más sobre este lugar</summary><p>'+safe(p.texto_guia_2025)+'</p></details>';
  if(p.observaciones&&p.observaciones!==p.descripcion)html+='<p class="meta">'+safe(p.observaciones)+'</p>';
  if(p.LOCALIDAD){const num=v=>Number.isFinite(Number(v))?new Intl.NumberFormat('es-CL').format(v):'—';html+='<p class="meta"><b>Censo 2024:</b> '+num(p.n_per)+' habitantes · '+num(p.n_hombres)+' hombres · '+num(p.n_mujeres)+' mujeres · '+num(p.n_hog)+' hogares</p>'}
  if(p.direccion)html+='<p class="meta"><b>Dirección según catastro:</b> '+safe(p.direccion)+'</p>';
- if(p.archivo_kmz)html+='<p class="meta"><b>Localización:</b> archivo KMZ «'+safe(p.archivo_kmz)+'» · ubicación por revisar</p>';
- if(p.fuente)html+='<p class="meta"><b>Fuente:</b> '+safe(p.fuente)+'</p>';
- if(p.precision||p.precision_geometrica)html+='<p class="meta"><b>Precisión:</b> '+safe(p.precision||p.precision_geometrica)+'</p>';
+ 
+ // Créditos y fuentes documentales permanecen en la base maestra, no se repiten en cada popup.
+ // La precisión técnica se conserva en GeoJSON, no se muestra al visitante.
  if(c){
   html+='<p class="meta"><b>Distancias en línea recta:</b> Estación Paine '+hav(c,[-33.81625,-70.7437])+' km · Estación Central '+hav(c,[-33.4506,-70.6899])+' km. No son distancias de viaje.</p>';
   const dest=c[0]+','+c[1];
   html+='<div class="buttonlinks"><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&origin='+originCentral+'&destination='+dest+'">Desde Estación Central ↗</a><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&origin='+originPaine+'&destination='+dest+'">Desde Estación Paine ↗</a></div>';
-  if(f.geometry?.type!=='Point')html+='<p class="meta">Las indicaciones conducen a un punto orientativo de esta geometría. Verifica el acceso y no ingreses a predios privados.</p>';
+  // La geometría no puntual no necesita nota técnica redundante en la ficha turística.
  }
  const link=p.sitio_web||p.url_oficial||'';
  if(/^https:\/\//.test(link))html+='<div class="buttonlinks"><a href="'+safe(link)+'" target="_blank" rel="noopener">Fuente / más información ↗</a></div>';
