@@ -134,6 +134,7 @@ function register(id,name,geo,style,color,visible,target,desc){
    const setAll=(on,zoom)=>{for(const item of entries){item.check.checked=on;if(on)layer.addLayer(item.child);else layer.removeLayer(item.child);}if(on){layer.addTo(map);if(zoom)zoomLayer(layer);}else map.removeLayer(layer);allInput.checked=on;allInput.indeterminate=false;};
    allInput.addEventListener('change',()=>setAll(allInput.checked,false));
    layerMap[id].activateAll=()=>setAll(true,false);
+   layerMap[id].activateChild=child=>{const found=entries.find(e=>e.child===child);if(found){found.check.checked=true;layer.addLayer(child);layer.addTo(map);const n=entries.filter(e=>e.check.checked).length;allInput.checked=n===entries.length;allInput.indeterminate=n>0&&n<entries.length;}};
    outer.appendChild(body);host.appendChild(outer);return layer;
  }
  if(visible)layer.addTo(map);
@@ -289,7 +290,7 @@ fetch('datos/hitos_kmz_2026.geojson',{cache:'no-store'})
 .then(g=>{
   buildKmzCaseIndex(g,kmzGrupos);
   const info=document.getElementById('kmzInfo');
-  if(info)info.textContent=g.features.length+' hitos digitalizados. Relatos poéticos + catastro 2025 cuando hay coincidencia. La información comercial y las ubicaciones requieren revisión.';
+  if(info)info.textContent=g.features.length+' hitos georreferenciados, agrupados para explorar sin saturar el mapa.';
 })
 .catch(err=>{console.error(err);document.getElementById('kmzInfo').textContent='No se pudo abrir la capa KMZ: '+err.message;});
 fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
@@ -300,6 +301,9 @@ fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 // Capa hidrográfica interpretativa: textos completos a la izquierda; lectura geográfica y controles a la derecha.
 const hydroColors=Array(10).fill(CYAN_WATER);
 const hydroList=document.getElementById('hydroLayers'),poems=document.getElementById('hydroPoetry');
+const hydroAll=document.getElementById('hydroAll');
+if(hydroAll)hydroAll.addEventListener('change',()=>{for(const x of document.querySelectorAll('#hydroLayers .water-label input')){if(x.checked!==hydroAll.checked){x.checked=hydroAll.checked;x.dispatchEvent(new Event('change'));}}});
+const syncAllHydro=()=>{const a=[...document.querySelectorAll('#hydroLayers .water-label input')];if(!hydroAll||!a.length)return;const n=a.filter(x=>x.checked).length;hydroAll.checked=n===a.length;hydroAll.indeterminate=n>0&&n<a.length;};
 window.abrirCauces=()=>{
  const panel=document.getElementById('hydroSection');
  if(panel){panel.open=true;document.querySelectorAll('aside').forEach(el=>el.classList.remove('mobile-open'));document.getElementById('right').classList.add('mobile-open');panel.scrollIntoView({block:'nearest',behavior:'smooth'});}
@@ -313,6 +317,7 @@ window.verCauce=(id)=>{
  if(item)item.open=true;
  const input=document.getElementById('hydro-check-'+id);
  if(input)input.checked=true;
+ syncAllHydro();
  entry.layer.addTo(map);
  zoomLayer(entry.layer);
 };
@@ -342,13 +347,14 @@ fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
     const controls=document.createElement('div');controls.className='water-controls';
     const label=document.createElement('label');label.className='water-label';
     const check=document.createElement('input');check.type='checkbox';check.id='hydro-check-'+item.id;check.checked=false;
-    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);zoomLayer(layer);}else{map.removeLayer(layer)}});
+    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);zoomLayer(layer);}else{map.removeLayer(layer)}syncAllHydro();});
     label.appendChild(check);label.appendChild(document.createTextNode('Mostrar en el mapa'));
     const zoom=document.createElement('button');zoom.className='zoom';zoom.type='button';zoom.textContent='⌖ Acercar';zoom.addEventListener('click',()=>window.verCauce(item.id));
     controls.appendChild(label);controls.appendChild(zoom);body.appendChild(controls);detail.appendChild(body);hydroList.appendChild(detail);
   }
   const summary=document.getElementById('hydroCount');
   if(summary)summary.textContent=g.cauces.length+' cursos identificados · despliega cada uno para leer su recorrido y elegir qué mostrar.';
+  syncAllHydro();
 })
 .catch(err=>{console.warn('Cauces separados:',err);if(hydroList)hydroList.textContent='No se pudieron cargar los cursos de agua. Actualiza la página.';});
 const captions={'Paine Centro':'Entre la estación, las casonas y los encuentros cotidianos, el corazón de la comuna cuenta su historia.','Champa - Hospital':'La vida de campo en torno al río Angostura, donde el tren y las sandías acompañaron el paso de generaciones.','Pintue':'El valle de Aculeo a los pies del Cordón de Cantillana: la memoria del agua y el paisaje se encuentran aquí.','El Transito':'El camino hacia la precordillera abre puertas a antiguas haciendas, viñas y tradiciones.','Huelquen':'Huelquén enlaza los caminos de Padre Hurtado con la vida rural, las viñas y los cerros de El Ajial.','Chada':'El paso entre valles y montañas, una puerta de caminos y memorias de la Independencia.'};
@@ -377,7 +383,10 @@ window.focusPoint=(lat,lon,z,name)=>{
  const layers=featureLookup.get(nombreCorregido(name))||[];
  const target=layers.find(x=>x.getLatLng&&x.getLatLng().distanceTo(L.latLng(lat,lon))<120)||layers[0];
  if(target){
-   for(const item of Object.values(layerMap)){if(item.layer?.hasLayer?.(target)&&!map.hasLayer(item.layer)){item.layer.addTo(map);}}
+   for(const item of Object.values(layerMap)){
+     if(item.activateChild&&item.layer?.getLayers){item.activateChild(target);}
+     else if(item.layer?.hasLayer?.(target)&&!map.hasLayer(item.layer)){item.layer.addTo(map);}
+   }
    map.flyTo([lat,lon],z,{duration:.6});
    destacarCapa(target);setTimeout(()=>target.openPopup(),650);
    return;
