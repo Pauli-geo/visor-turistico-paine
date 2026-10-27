@@ -31,6 +31,21 @@
       "archivo": "imagenes/hitos/municipalidad.webp",
       "tipo": "fotografia_del_lugar",
       "nota": "Fotografía aérea de la Municipalidad de Paine"
+    },
+    "Plaza de Armas de Paine": {
+      "archivo": "imagenes/hitos/plaza_armas_usuario.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Imagen de la plaza aportada en octubre de 2026"
+    },
+    "Camino Padre Hurtado · G-45-H": {
+      "archivo": "imagenes/hitos/huelquen_maipo_andes_usuario.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Paisaje del circuito Maipo Andes, Huelquén–Chada"
+    },
+    "Circuito Maipo Andes / Huelquén–Chada": {
+      "archivo": "imagenes/hitos/huelquen_maipo_andes_usuario.webp",
+      "tipo": "fotografia_del_lugar",
+      "nota": "Paisaje de Huelquén"
     }
   },
   "ejemplo_futuro": {
