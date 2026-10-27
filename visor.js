@@ -5,6 +5,13 @@ const CYAN_WATER='#00B6D1';
 const baseDefs={osm:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',sat:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'};let base=null;const layerMap={};const featureLookup=new Map();let selection=null;
 const safe=s=>String(s??'').replace(/[&<>"']/g,a=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[a]));
 const nombreCorregido=v=>String(v||'').replace(/\bHuelquen\b/gi,'Huelquén').replace(/\bEl Transito\b/gi,'El Tránsito').replace(/\bPintue\b/gi,'Pintué').replace(/\bHuiticalan\b/gi,'Huiticalán');const n=f=>nombreCorregido(f.properties?.nombre||f.properties?.nombre_corto||f.properties?.LOCALIDAD||f.properties?.NOMBRE||f.properties?.NOMBRE_CAL||'Hito de Paine').replace(/\s*\(tramo turístico base\)/gi,'').trim();
+const tituloHito=v=>String(v||'').trim().toLocaleUpperCase('es');
+const textoEvocativo=v=>{
+ let t=String(v||'').trim();if(!t)return t;
+ // Preservar nombres propios; ajustar mayúsculas solo si todo el texto de entrada es mayúsculo.
+ if(t.length>18 && !/[a-záéíóúüñ]/u.test(t) && /[A-ZÁÉÍÓÚÜÑ]/u.test(t))t=t.toLocaleLowerCase('es');
+ return t.replace(/(^[^\p{L}]*)(\p{L})/u,(_,p,c)=>p+c.toLocaleUpperCase('es'));
+};
 const hav=(a,b)=>{let rad=Math.PI/180,da=(a[0]-b[0])*rad,db=(a[1]-b[1])*rad,x=Math.sin(da/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(db/2)**2;return (2*6371*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1)};
 const coords=f=>f.geometry?.type==='Point'?[f.geometry.coordinates[1],f.geometry.coordinates[0]]:null;
 const pics={
@@ -49,9 +56,9 @@ function popup(f,ly){
  if(!c&&ly&&typeof ly.getBounds==='function'){const b=ly.getBounds();if(b&&b.isValid()){const ctr=b.getCenter();c=[ctr.lat,ctr.lng]}}
  const photo=fotoReferencia(name,p);
  const photoHtml=photo.url?'<img class="ficha-foto" src="'+safe(photo.url)+'" alt="Imagen turística: '+safe(name)+'" loading="lazy" onerror="this.style.display='+"'none'"+'">':'';
- let html='<div class="ficha">'+photoHtml+'<h3>'+safe(name)+'</h3><div class="meta">'+safe(p.categoria||p.categoria_proteccion||p.AREA_C||'Territorio de Paine')+'</div><p>'+safe(relatoDe(p,name))+'</p>';
+ let html='<div class="ficha">'+photoHtml+'<h3>'+safe(tituloHito(name))+'</h3><div class="meta">'+safe(p.categoria||p.categoria_proteccion||p.AREA_C||'Territorio de Paine')+'</div><p>'+safe(textoEvocativo(relatoDe(p,name)))+'</p>';
  // La ficha pública muestra la fotografía sin leyendas de carácter interno.
- if(p.descripcion&&p.descripcion!==p.relato)html+='<p>'+safe(p.descripcion)+'</p>';
+ if(p.descripcion&&p.descripcion!==p.relato)html+='<p>'+safe(textoEvocativo(p.descripcion))+'</p>';
  if(p.texto_guia_2025)html+='<details class="ficha-doc"><summary>Conocer más sobre este lugar</summary><p>'+safe(p.texto_guia_2025)+'</p></details>';
  if(p.observaciones&&p.observaciones!==p.descripcion)html+='<p class="meta">'+safe(p.observaciones)+'</p>';
  if(p.LOCALIDAD){const num=v=>Number.isFinite(Number(v))?new Intl.NumberFormat('es-CL').format(v):'—';html+='<p class="meta"><b>Censo 2024:</b> '+num(p.n_per)+' habitantes · '+num(p.n_hombres)+' hombres · '+num(p.n_mujeres)+' mujeres · '+num(p.n_hog)+' hogares</p>'}
@@ -109,6 +116,7 @@ function register(id,name,geo,style,color,visible,target,desc){
  }
  if(target==='attractionLayers'){
    const children=layer.getLayers();layer.clearLayers();
+   layerMap[id].featureIndex=new Map(children.filter(x=>x.feature?.properties?.id).map(x=>[x.feature.properties.id,x]));
    const outer=document.createElement('details');outer.className='attraction-group';
    const title=document.createElement('summary');title.textContent=name+' · '+children.length+' hitos';outer.appendChild(title);
    const body=document.createElement('div');body.className='attraction-group-body';
@@ -118,14 +126,14 @@ function register(id,name,geo,style,color,visible,target,desc){
    const entries=[];
    for(const [idx,child] of children.entries()){
      const props=child.feature?.properties||{};
-     const titleText=n(child.feature||{properties:{nombre:name}});
+     const titleText=tituloHito(n(child.feature||{properties:{nombre:name}}));
      const item=document.createElement('details');item.className='attraction-entry';
      const summary=document.createElement('summary');summary.textContent=titleText;item.appendChild(summary);
      const panel=document.createElement('div');panel.className='attraction-entry-body';
      const descText=[props.texto_documental,props.texto_guia_2025,props.descripcion,props.descripcion_breve].filter(x=>typeof x==='string'&&x.trim());
      const uniqueDesc=[...new Set(descText)];
-     if(uniqueDesc.length){for(const value of uniqueDesc){const para=document.createElement('p');para.textContent=value;panel.appendChild(para);}}
-     else{const para=document.createElement('p');para.textContent=props.relato||'Hito identificado en la cartografía de Paine.';panel.appendChild(para);}
+     if(uniqueDesc.length){for(const value of uniqueDesc){const para=document.createElement('p');para.textContent=textoEvocativo(value);panel.appendChild(para);}}
+     else{const para=document.createElement('p');para.textContent=textoEvocativo(props.relato||'Hito identificado en la cartografía de Paine.');panel.appendChild(para);}
      const label=document.createElement('label');label.className='attraction-toggle';
      const check=document.createElement('input');check.type='checkbox';check.checked=false;
      label.appendChild(check);label.appendChild(document.createTextNode('Mostrar este hito'));panel.appendChild(label);
@@ -195,10 +203,40 @@ register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Ce
 register('train-stops','Estaciones Paine, Hospital y referencia Estación Central',D.estaciones,{},'#305b83',false,'roadsLayers');
 register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'roadsLayers');
 register('padre','Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'roadsLayers');
+// Los dos nuevos KMZ son la referencia cartográfica única de estos espacios de memoria.
+// Evitar el antiguo punto del Memorial y eventuales duplicados de EFE en otras capas.
+const esMemoriaActualizada=feat=>{
+ const nombre=String(feat.properties?.nombre||feat.properties?.NOMBRE||'').toLocaleLowerCase('es');
+ return (/memorial/.test(nombre)&&/paine/.test(nombre))||(/estadio/.test(nombre)&&/ferroviario|\befe\b/.test(nombre));
+};
+for(const base of [D.hitos,D.culturales,D.cmn]){
+ if(Array.isArray(base?.features))base.features=base.features.filter(f=>!esMemoriaActualizada(f));
+}
 register('attractions','Atractivos naturales y culturales',D.hitos,{},'#8c3990',false,'attractionLayers');
 register('cultural','Centro Cultural, Memorial, Municipalidad y otros hitos',D.culturales,{},'#aa4f5d',false,'attractionLayers');
 register('plaza','Plaza de Armas de Paine · polígono del proyecto',D.plaza,{color:'#b51c80',weight:3,fillColor:'#eaaa4a',fillOpacity:.35},null,false,'attractionLayers','Ámbito del proyecto municipal de mejoramiento integral');
 register('tricolor','Estadio Municipal Tricolor',D.tricolor,{color:'#b92378',weight:2,fillColor:'#ffbfdb',fillOpacity:.32},null,false,'attractionLayers');
+// Dos hitos de memoria añadidos con coordenadas exactas de los KMZ entregados.
+window.abrirLugarMemoria=id=>{
+ const ref=layerMap['lugares-memoria'];
+ const feature=ref?.layer?.getLayers?.().find(ly=>ly.feature?.properties?.id===id)
+   ||(ref?.featureIndex?.get(id));
+ if(!feature){document.getElementById('status').textContent='Cargando los lugares de memoria. Intenta nuevamente.';return;}
+ ref.activateChild?.(feature);
+ const point=feature.getLatLng?.();
+ if(point)map.flyTo(point,16,{duration:.65});
+ destacarCapa(feature);
+ for(const el of document.querySelectorAll('#attractionLayers .attraction-group')){
+  if(el.querySelector('summary')?.textContent?.includes('Lugares de memoria y derechos humanos'))el.open=true;
+ }
+};
+fetch('datos/lugares_memoria_paine_2026.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('Archivo de lugares de memoria no disponible')))
+.then(g=>{
+ if(g.features?.length!==2)throw Error('Se esperaban dos puntos de memoria');
+ register('lugares-memoria','Lugares de memoria y derechos humanos',g,{},'#66236f',false,'attractionLayers');
+})
+.catch(err=>{console.warn('Lugares de memoria:',err);document.getElementById('status').textContent='No se pudieron cargar los hitos de memoria: '+err.message;});
 register('cmn','Monumentos Nacionales · CMN',D.cmn,{},'#c37b2e',false,'heritageLayers');
 register('lodgings','Alojamientos · Paine 2025',D.alojamientos,{},'#598447',false,'lodgingLayers');
 register('catastro','Catastro Territorial de Atractivos y Lugares de Interés Turístico · diciembre 2025',D.catastro,{},'#91664e',false,'catalogLayers');
@@ -267,11 +305,11 @@ function buildKmzCaseIndex(g,groups){
   for(const f of groupF){
    const p=f.properties||{};if(!p.id)continue;
    const item=document.createElement('details');item.className='kmz-case-entry';
-   const summary=document.createElement('summary');summary.textContent=p.nombre||'Lugar sin nombre';item.appendChild(summary);
+   const summary=document.createElement('summary');summary.textContent=tituloHito(p.nombre||'Lugar sin nombre');item.appendChild(summary);
    const body=document.createElement('div');body.className='kmz-case-body';
    const paragraphs=[p.texto_guia_2025,p.texto_documental,p.descripcion].filter(x=>typeof x==='string'&&x.trim());
    if(!paragraphs.length&&p.relato)paragraphs.push(p.relato);
-   for(const paraText of [...new Set(paragraphs)]){const descr=document.createElement('p');descr.textContent=paraText;body.appendChild(descr);}
+   for(const paraText of [...new Set(paragraphs)]){const descr=document.createElement('p');descr.textContent=textoEvocativo(paraText);body.appendChild(descr);}
    const oneRow=document.createElement('label');oneRow.className='attraction-toggle';
    const check=document.createElement('input');check.type='checkbox';check.checked=false;
    oneRow.appendChild(check);oneRow.appendChild(document.createTextNode('Mostrar este hito'));body.appendChild(oneRow);
@@ -362,13 +400,13 @@ fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
     layerMap['hidro-'+item.id]={layer,name:item.nombre,visible:false,desc:item.descripcion_geo};
     // El panel izquierdo conserva la voz narrativa; la ficha derecha NO la repite.
     const tale=document.createElement('details');tale.className='relato-cauce';
-    const title=document.createElement('summary');title.textContent=item.nombre;tale.appendChild(title);
-    const paragraph=document.createElement('p');paragraph.className='poema-cauce';paragraph.textContent=item.relato;tale.appendChild(paragraph);
+    const title=document.createElement('summary');title.textContent=tituloHito(item.nombre);tale.appendChild(title);
+    const paragraph=document.createElement('p');paragraph.className='poema-cauce';paragraph.textContent=textoEvocativo(item.relato);tale.appendChild(paragraph);
     const b=document.createElement('button');b.className='btn';b.textContent='Ver este cauce en el mapa';b.addEventListener('click',()=>window.verCauce(item.id));tale.appendChild(b);
     poems?.appendChild(tale);
     // Acordeón anidado de la leyenda: una ficha geográfica individual y un interruptor explícito.
     const detail=document.createElement('details');detail.className='water-course';detail.id='hydro-item-'+item.id;
-    const summary=document.createElement('summary');summary.textContent=item.nombre;summary.style.borderLeft='5px solid '+color;detail.appendChild(summary);
+    const summary=document.createElement('summary');summary.textContent=tituloHito(item.nombre);summary.style.borderLeft='5px solid '+color;detail.appendChild(summary);
     const body=document.createElement('div');body.className='water-body';
     const geographic=document.createElement('p');geographic.textContent=item.descripcion_geo;body.appendChild(geographic);
     const context=document.createElement('small');context.textContent=item.region;context.className='water-region';body.appendChild(context);
