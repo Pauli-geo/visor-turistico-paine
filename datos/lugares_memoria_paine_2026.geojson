@@ -1,0 +1,48 @@
+{
+  "type": "FeatureCollection",
+  "name": "Lugares de memoria de Paine · KMZ 27 octubre 2026",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "MEM-2026-001",
+        "nombre": "MEMORIAL PAINE",
+        "categoria": "Memoria histórica y derechos humanos",
+        "relato": "Espacio de memoria que recuerda a 70 detenidos desaparecidos y ejecutados de la comuna de Paine y trabaja con un enfoque en derechos humanos y pedagogía de la memoria.",
+        "descripcion": "Sitio de memoria y educación en derechos humanos de la comuna de Paine.",
+        "archivo_kmz": "MEMORIAL PAINE.kmz",
+        "fuente": "Ubicación: MEMORIAL PAINE.kmz aportado el 27 de octubre de 2026. Texto: redacción suministrada para el visor municipal.",
+        "foto": "",
+        "estado_validacion": "Ubicación aportada en KMZ; pendiente de revisión municipal definitiva."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -70.70805880597307,
+          -33.80398290269875
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "MEM-2026-002",
+        "nombre": "ESTADIO FERROVIARIO DE PAINE (EFE)",
+        "categoria": "Memoria histórica y derechos humanos",
+        "relato": "Un retrato para la memoria de Paine. Monumento que honra la vida de los 70 detenidos desaparecidos de Paine con retratos del pintor painino Lorenzo Moya, y que también busca educar a las futuras generaciones sobre respeto, empatía y memoria histórica.",
+        "descripcion": "Además de las actividades deportivas, en el Estadio Ferroviario de Paine (EFE) se conmemora a los detenidos desaparecidos de Paine.",
+        "archivo_kmz": "ESTADIO FERROVIARIO PAINE .kmz",
+        "fuente": "Ubicación: ESTADIO FERROVIARIO PAINE .kmz aportado el 27 de octubre de 2026. Texto: redacción suministrada para el visor municipal.",
+        "foto": "",
+        "estado_validacion": "Ubicación aportada en KMZ; pendiente de revisión municipal definitiva."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -70.7442711519025,
+          -33.81424515243359
+        ]
+      }
+    }
+  ]
+}
