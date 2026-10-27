@@ -532,7 +532,7 @@ function setBase(type){
 }
 document.querySelectorAll('input[name="base"]').forEach(i=>i.onchange=()=>setBase(i.value));
 document.querySelector('input[name="base"][value="osm"]').checked=true;setBase('osm');
-window.toggleAndFocus=id=>{let v=layerMap[id];if(!v)return;if(v.activateAll)v.activateAll();v.layer.addTo(map);zoomLayer(v.layer);document.querySelectorAll('label.layer').forEach(el=>{if(el.textContent.includes(v.name))el.querySelector('input').checked=true});if(['plaza','padre','valle','humedal'].includes(id)){const first=v.layer.getLayers?.()[0];if(first)destacarCapa(first);}};
+window.toggleAndFocus=id=>{let v=layerMap[id];if(!v)return;if(v.activateAll)v.activateAll();v.layer.addTo(map);zoomLayer(v.layer);document.querySelectorAll('label.layer').forEach(el=>{if(el.textContent.includes(v.name))el.querySelector('input').checked=true});if(['plaza','padre','valle','humedal','via-G-500'].includes(id)){const first=v.layer.getLayers?.()[0];if(first)destacarCapa(first);}};
 window.focusPoint=(lat,lon,z,name)=>{
  if(String(name).toLowerCase().includes('municipalidad de paine')){lat=MUNICIPIO_LAT;lon=MUNICIPIO_LON;}
  const layers=featureLookup.get(nombreCorregido(name))||[];
