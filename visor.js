@@ -213,8 +213,8 @@ for(const feat of D.routes?.padre?.features||[]){feat.properties=feat.properties
 // Las nuevas áreas PRMS se cargan desde AREAS PRMS.zip, no desde la antigua capa genérica.
 register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'hiddenLayers');
 // Cada río y estero se sirve en una capa específica desde datos/cauces_paine_individuales.geojson.
-register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'roadsLayers');
-register('train-stops','ESTACIONES PAINE, HOSPITAL Y REFERENCIA ESTACIÓN CENTRAL',D.estaciones,{},'#305b83',false,'stationsLayers');
+register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'hiddenLayers');
+register('train-stops','ESTACIONES PAINE, HOSPITAL Y REFERENCIA ESTACIÓN CENTRAL',D.estaciones,{},'#305b83',false,'hiddenLayers');
 register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
 register('padre','RUTA MAIPO - ANDES / EL TRÁNSITO - HUELQUÉN - CHADA',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
 // Los dos nuevos KMZ son la referencia cartográfica única de estos espacios de memoria.
@@ -241,14 +241,14 @@ window.abrirLugarMemoria=id=>{
  if(point)map.flyTo(point,16,{duration:.65});
  destacarCapa(feature);
  for(const el of document.querySelectorAll('#attractionLayers .attraction-group')){
-  if(el.querySelector('summary')?.textContent?.includes('Lugares de memoria y derechos humanos'))el.open=true;
+  if(el.querySelector('summary')?.textContent?.includes('LUGARES DE MEMORIA Y DERECHOS'))el.open=true;
  }
 };
 fetch('datos/lugares_memoria_paine_2026.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('Archivo de lugares de memoria no disponible')))
 .then(g=>{
  if(g.features?.length!==2)throw Error('Se esperaban dos puntos de memoria');
- register('lugares-memoria','Lugares de memoria y derechos humanos',g,{},'#66236f',false,'attractionLayers');
+ register('lugares-memoria','LUGARES DE MEMORIA Y DERECHOS',g,{},'#66236f',false,'attractionLayers');
 })
 .catch(err=>{console.warn('Lugares de memoria:',err);document.getElementById('status').textContent='No se pudieron cargar los hitos de memoria: '+err.message;});
 register('cmn','Monumentos Nacionales · CMN',D.cmn,{},'#c37b2e',false,'hiddenLayers');
@@ -315,7 +315,7 @@ fetch('datos/prms_areas_kmz_polyline.json',{cache:'no-store'})
   const meta=PRMS_AREAS[id];if(!meta)continue;
   const ring=decodeRuta(encoded);
   const f={type:'Feature',properties:{id,nombre:meta.nombre,descripcion:meta.descripcion,fuente:'AREAS PRMS.zip',precision:'Geometría generalizada para el mapa web'},geometry:{type:'Polygon',coordinates:[ring]}};
-  register('area-'+id,meta.nombre,{type:'FeatureCollection',features:[f]},{color:meta.color,weight:2,fillColor:meta.color,fillOpacity:.14},null,false,meta.grupo,meta.descripcion);
+  register('area-'+id,meta.nombre,{type:'FeatureCollection',features:[f]},{color:meta.color,weight:1.25,opacity:.55,fillColor:meta.color,fillOpacity:.055},null,false,meta.grupo,meta.descripcion);
  }
 })
 .catch(err=>console.warn('Áreas PRMS:',err));
@@ -444,7 +444,7 @@ descargarInventarioKmz().catch(err=>{
 });
 fetch('datos/reserva_el_ajial_kmz.geojson',{cache:'no-store'})
 .then(r=>r.ok?r.json():Promise.reject(Error('No disponible')))
-.then(g=>register('ajial','El Ajial · área natural',g,{color:'#218565',weight:2.5,fillColor:'#98cca3',fillOpacity:.19},null,false,'natureLayers'))
+.then(g=>register('ajial','El Ajial · área natural',g,{color:'#218565',weight:1.5,opacity:.6,fillColor:'#98cca3',fillOpacity:.07},null,false,'natureLayers'))
 .catch(err=>console.warn('No se cargó reserva El Ajial',err));
 
 // Capa hidrográfica interpretativa: textos completos a la izquierda; lectura geográfica y controles a la derecha.
@@ -532,6 +532,7 @@ function setBase(type){
 }
 document.querySelectorAll('input[name="base"]').forEach(i=>i.onchange=()=>setBase(i.value));
 document.querySelector('input[name="base"][value="osm"]').checked=true;setBase('osm');
+window.toggleRailLayer=(id,on)=>{const entry=layerMap[id];if(!entry)return;on?entry.layer.addTo(map):map.removeLayer(entry.layer);if(on)zoomLayer(entry.layer);};
 window.toggleAndFocus=id=>{let v=layerMap[id];if(!v)return;if(v.activateAll)v.activateAll();v.layer.addTo(map);zoomLayer(v.layer);document.querySelectorAll('label.layer').forEach(el=>{if(el.textContent.includes(v.name))el.querySelector('input').checked=true});if(['plaza','padre','valle','humedal','via-G-500'].includes(id)){const first=v.layer.getLayers?.()[0];if(first)destacarCapa(first);}};
 window.focusPoint=(lat,lon,z,name)=>{
  if(String(name).toLowerCase().includes('municipalidad de paine')){lat=MUNICIPIO_LAT;lon=MUNICIPIO_LON;}
@@ -553,8 +554,31 @@ window.focusPoint=(lat,lon,z,name)=>{
  map.flyTo([lat,lon],z,{duration:.6});setTimeout(()=>marker.openPopup(),650);
 };
 window.togglePanel=id=>{for(let el of document.querySelectorAll('aside'))if(el.id!==id)el.classList.remove('mobile-open');document.getElementById(id).classList.toggle('mobile-open')};
-function listCatalog(key,container){let arr=D[key].features,unlocated=arr.filter(f=>!f.geometry);if(!unlocated.length)return;let box=document.getElementById(container);box.insertAdjacentHTML('beforeend','<p class="empty">'+unlocated.length+' registros del documento no cuentan aún con coordenadas verificadas. Están disponibles para consulta por dirección, sin marcador inventado.</p><input class="search" placeholder="Buscar por nombre o dirección"><div class="catalogItems"></div>');let input=box.querySelector('.search'),target=box.querySelector('.catalogItems');function render(){target.innerHTML='';let value=input.value.toLowerCase();for(let f of unlocated.filter(f=>JSON.stringify(f.properties).toLowerCase().includes(value)).slice(0,30)){let p=f.properties;let item=document.createElement('div');item.className='item';item.innerHTML='<b>'+safe(p.nombre)+'</b><br>'+safe(p.direccion||'Dirección pendiente')+'<br><a class="link" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((p.nombre||'')+' '+(p.direccion||'')+' Paine Chile')+'" target="_blank">Buscar dirección ↗</a>';target.appendChild(item)}}input.oninput=render;render()}
-listCatalog('catastro','catalogLayers');listCatalog('patrimonio','archLayers');listCatalog('alojamientos','lodgingLayers');
+// Buscador único compartido entre alojamientos, catastro y patrimonio sin coordenadas.
+const catalogSearch=document.getElementById('catalogGlobalSearch');
+const catalogRenderers=[];
+function listCatalog(key,container){
+ const arr=D[key].features,unlocated=arr.filter(f=>!f.geometry);
+ if(!unlocated.length)return;
+ const box=document.getElementById(container);
+ box.insertAdjacentHTML('beforeend','<p class="empty">'+unlocated.length+' registros del documento no cuentan aún con coordenadas verificadas. Están disponibles para consulta por dirección, sin marcador inventado.</p><div class="catalogItems"></div>');
+ const target=box.querySelector('.catalogItems');
+ const render=()=>{
+  target.innerHTML='';
+  const value=(catalogSearch?.value||'').toLocaleLowerCase('es');
+  for(const f of unlocated.filter(f=>JSON.stringify(f.properties).toLocaleLowerCase('es').includes(value)).slice(0,30)){
+   const p=f.properties,item=document.createElement('div');
+   item.className='item';
+   item.innerHTML='<b>'+safe(p.nombre)+'</b><br>'+safe(p.direccion||'Dirección pendiente')+'<br><a class="link" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((p.nombre||'')+' '+(p.direccion||'')+' Paine Chile')+'" target="_blank" rel="noopener">Buscar dirección ↗</a>';
+   target.appendChild(item);
+  }
+ };
+ catalogRenderers.push(render);render();
+}
+listCatalog('catastro','catalogLayers');
+listCatalog('patrimonio','archLayers');
+listCatalog('alojamientos','lodgingLayers');
+if(catalogSearch)catalogSearch.addEventListener('input',()=>catalogRenderers.forEach(render=>render()));
 // Límite comunal: nunca se sustituye por un límite inferido de áreas urbanas.
 const contorno=document.getElementById('roadsLayers');
 const estadoLim=document.createElement('div');estadoLim.className='notice';
