@@ -112,11 +112,28 @@ function selected(ly){
  if(bounds?.isValid())map.flyToBounds(bounds.pad(.15),{maxZoom:16,duration:.6});
  else if(ly.getLatLng)map.flyTo(ly.getLatLng(),16,{duration:.6});
 }
-function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:point||'#932475',fillOpacity:1}),onEachFeature:(f,x)=>{const key=n(f);if(!featureLookup.has(key))featureLookup.set(key,[]);featureLookup.get(key).push(x);x.bindPopup(()=>popup(f,x),{maxWidth:360});x.on('click',()=>{destacarCapa(x);setTimeout(()=>x.openPopup(),650)})}});return l;}
+function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:point||'#932475',fillOpacity:1}),onEachFeature:(f,x)=>{const key=n(f);if(!featureLookup.has(key))featureLookup.set(key,[]);featureLookup.get(key).push(x);x.bindPopup(()=>popup(f,x),{maxWidth:360});x.on('click',()=>{if(x._environmentGroup)highlightEnvironment(x._environmentGroup);else destacarCapa(x);setTimeout(()=>x.openPopup(),650)})}});return l;}
+let highlightedEnvironment=null;
+function clearEnvironmentHighlight(){
+ if(!highlightedEnvironment)return;
+ highlightedEnvironment.eachLayer(part=>{if(part._environmentBase&&part.setStyle){part.setStyle(part._environmentBase);delete part._environmentBase;}});
+ highlightedEnvironment=null;
+}
+function highlightEnvironment(group){
+ if(highlightedEnvironment&&highlightedEnvironment!==group)clearEnvironmentHighlight();
+ group.eachLayer(part=>{
+  if(!part.setStyle)return;
+  if(!part._environmentBase)part._environmentBase={color:part.options.color,weight:part.options.weight,opacity:part.options.opacity,fillColor:part.options.fillColor,fillOpacity:part.options.fillOpacity};
+  part.setStyle({color:'#BA167A',weight:4,opacity:1,fillOpacity:.11});
+  part.bringToFront?.();
+ });
+ highlightedEnvironment=group;
+}
 function register(id,name,geo,style,color,visible,target,desc){
  let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};
  const host=document.getElementById(target);
  if(['natureLayers','protectedLayers','mountainsLayers'].includes(target)){
+   layer.eachLayer(part=>{part._environmentGroup=layer;});
    const box=document.createElement('details');box.className='environment-item';
    const title=document.createElement('summary');title.textContent=name;box.appendChild(title);
    const body=document.createElement('div');body.className='environment-body';
@@ -125,8 +142,8 @@ function register(id,name,geo,style,color,visible,target,desc){
    label.appendChild(input);label.appendChild(document.createTextNode('Mostrar esta capa'));body.appendChild(label);
    if(desc){const p=document.createElement('p');p.className='layer-desc';p.textContent=desc;body.appendChild(p);}
    const zoom=document.createElement('button');zoom.type='button';zoom.className='zoom';zoom.textContent='⌖ Localizar';body.appendChild(zoom);
-   input.addEventListener('change',()=>{input.checked?layer.addTo(map):map.removeLayer(layer);if(input.checked&&!BULK_MODE)zoomLayer(layer);});
-   zoom.addEventListener('click',()=>{input.checked=true;layer.addTo(map);zoomLayer(layer);});
+   input.addEventListener('change',()=>{if(input.checked){layer.addTo(map);highlightEnvironment(layer);if(!BULK_MODE)zoomLayer(layer);}else{map.removeLayer(layer);if(highlightedEnvironment===layer)clearEnvironmentHighlight();}});
+   zoom.addEventListener('click',()=>{input.checked=true;layer.addTo(map);highlightEnvironment(layer);zoomLayer(layer);});
    box.appendChild(body);host.appendChild(box);return layer;
  }
  if(['attractionLayers','stationsLayers'].includes(target)){
