@@ -570,7 +570,22 @@ window.focusPoint=(lat,lon,z,name)=>{
  marker.bindPopup(()=>popup(point,marker),{maxWidth:360});
  map.flyTo([lat,lon],z,{duration:.6});setTimeout(()=>marker.openPopup(),650);
 };
-window.togglePanel=id=>{for(let el of document.querySelectorAll('aside'))if(el.id!==id)el.classList.remove('mobile-open');document.getElementById(id).classList.toggle('mobile-open')};
+window.closeMobilePanels=()=>{document.querySelectorAll('#left,#right').forEach(el=>el.classList.remove('mobile-open'));document.getElementById('mobileBackdrop')?.classList.remove('is-visible');document.body.classList.remove('mobile-panel-open');document.querySelectorAll('.mobile-nav button').forEach(el=>el.setAttribute('aria-expanded','false'));};
+window.togglePanel=id=>{
+ if(!window.matchMedia('(max-width:950px)').matches)return;
+ const panel=document.getElementById(id),open=!panel.classList.contains('mobile-open');
+ window.closeMobilePanels();
+ if(open){panel.classList.add('mobile-open');document.getElementById('mobileBackdrop')?.classList.add('is-visible');document.body.classList.add('mobile-panel-open');document.querySelector('.mobile-nav button[aria-controls="'+id+'"]')?.setAttribute('aria-expanded','true');}
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')window.closeMobilePanels()});
+window.addEventListener('resize',()=>{if(!window.matchMedia('(max-width:950px)').matches)window.closeMobilePanels();map.invalidateSize()});
+document.querySelectorAll('#left,#right').forEach(panel=>panel.addEventListener('click',e=>{
+ const target=e.target.closest('button[onclick]');
+ if(target&&/toggleAndFocus|focusPoint|focusKmz|focusFeature|zoomTo/i.test(target.getAttribute('onclick')||'')){
+  if(window.matchMedia('(max-width:950px)').matches)window.closeMobilePanels();
+ }
+}));
+map.on('click',()=>{if(window.matchMedia('(max-width:950px)').matches)window.closeMobilePanels()});
 // Buscador único compartido entre alojamientos, catastro y patrimonio sin coordenadas.
 const catalogSearch=document.getElementById('catalogGlobalSearch');
 const catalogRenderers=[];
