@@ -1,7 +1,7 @@
 (()=>{'use strict';const D=window.VISOR_DATA;const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([-33.835,-70.79],11);L.control.zoom({position:'bottomright'}).addTo(map);L.control.scale({metric:true,imperial:false,position:'bottomright'}).addTo(map);
 let BULK_MODE=false;
 const ROAD_COLOR='#4D6072';
-const CYAN_WATER='#00B6D1';
+const CYAN_WATER='#00DFFF';
 // Decodificador EPSG:4326 para polilíneas KMZ simplificadas; sin unir tramos con líneas inventadas.
 function decodeRuta(linea){
  let lat=0,lon=0,i=0,pts=[];
@@ -37,7 +37,8 @@ const pics={
 'Estero Pintué':'imagenes/hitos/estero_pintue.webp',
 'Plaza de Armas de Paine':'imagenes/hitos/plaza_armas_usuario.webp',
 'Camino Padre Hurtado · G-45-H':'imagenes/hitos/huelquen_maipo_andes_usuario.webp',
-'Circuito Maipo Andes / Huelquén–Chada':'imagenes/hitos/huelquen_maipo_andes_usuario.webp'
+'Circuito Maipo Andes / Huelquén–Chada':'imagenes/hitos/huelquen_maipo_andes_usuario.webp',
+'RUTA MAIPO - ANDES / EL TRÁNSITO - HUELQUÉN - CHADA':'imagenes/hitos/huelquen_maipo_andes_usuario.webp'
 };
 const originCentral='-33.4506,-70.6899',originPaine='-33.81625,-70.7437';
 const fotoReferencia=(name,p)=>{
@@ -105,7 +106,7 @@ function selected(ly){
  selection=ly;
  if(ly.setStyle){
    ly._normalStyle={color:ly.options.color,weight:ly.options.weight,fillColor:ly.options.fillColor,fillOpacity:ly.options.fillOpacity,radius:ly.options.radius};
-   ly.setStyle({color:'#FFCB33',weight:6,fillColor:'#FFFF54',fillOpacity:.8,radius:13});
+   ly.setStyle(ly.feature?.properties?.id==='rio-angostura' ? {color:'#00FFFF',weight:7,fillColor:'#00DFFF',fillOpacity:.46,opacity:1} : {color:'#FFCB33',weight:6,fillColor:'#FFFF54',fillOpacity:.8,radius:13});
  }
  let bounds=ly.getBounds?.();
  if(bounds?.isValid())map.flyToBounds(bounds.pad(.15),{maxZoom:16,duration:.6});
@@ -115,7 +116,7 @@ function lay(g,style,point){let l=L.geoJSON(g,{style:()=>({...style}),pointToLay
 function register(id,name,geo,style,color,visible,target,desc){
  let layer=lay(geo,style,color);layerMap[id]={layer,name,visible,desc};
  const host=document.getElementById(target);
- if(['natureLayers','parksLayers','protectedLayers','mountainsLayers'].includes(target)){
+ if(['natureLayers','protectedLayers','mountainsLayers'].includes(target)){
    const box=document.createElement('details');box.className='environment-item';
    const title=document.createElement('summary');title.textContent=name;box.appendChild(title);
    const body=document.createElement('div');body.className='environment-body';
@@ -209,18 +210,13 @@ for(const conjunto of [D.hitos,D.culturales,D.estaciones,D.cmn]){
 for(const feat of D.plaza?.features||[]){feat.properties=feat.properties||{};feat.properties.foto='imagenes/hitos/plaza_armas_usuario.webp';}
 for(const feat of D.routes?.padre?.features||[]){feat.properties=feat.properties||{};feat.properties.foto='imagenes/hitos/huelquen_maipo_andes_usuario.webp';}
 // La red vial principal anterior fue sustituida por el nuevo KMZ de vialidades.
-for(const [i,park] of (D.parques?.features||[]).entries()){
- const name=n(park);
- register('parque-prms-'+i,name==='Hito de Paine'?'PARQUE METROPOLITANO '+(i+1):tituloHito(name),
-  {type:'FeatureCollection',features:[park]},{color:'#258a5f',weight:2,fillColor:'#67bd89',fillOpacity:.2},null,false,'parksLayers');
-}
 // Las nuevas áreas PRMS se cargan desde AREAS PRMS.zip, no desde la antigua capa genérica.
 register('humedal','Humedal Urbano · Estero Pintué – Laguna de Aculeo – Estero Santa Marta',D.humedal,{color:'#0791be',weight:2.5,fillColor:'#34aaca',fillOpacity:.27},null,false,'hiddenLayers');
 // Cada río y estero se sirve en una capa específica desde datos/cauces_paine_individuales.geojson.
 register('rail','Red ferroviaria · Paine, Hospital y conexión con Estación Central',D.ferrocarril,{color:'#213d64',weight:3.4,dashArray:'8,5',opacity:.95},null,false,'roadsLayers');
 register('train-stops','ESTACIONES PAINE, HOSPITAL Y REFERENCIA ESTACIÓN CENTRAL',D.estaciones,{},'#305b83',false,'stationsLayers');
 register('valle','Ruta del Valle del Maipo · Champa–Aculeo–Rangue',D.routes.valle,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
-register('padre','Ruta de la Montaña y sus Viñas · Camino Padre Hurtado · El Tránsito–Huelquén–Chada',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
+register('padre','RUTA MAIPO - ANDES / EL TRÁNSITO - HUELQUÉN - CHADA',D.routes.padre,{color:ROAD_COLOR,weight:4,opacity:.94},null,false,'rutasIzquierda');
 // Los dos nuevos KMZ son la referencia cartográfica única de estos espacios de memoria.
 // Evitar el antiguo punto del Memorial y eventuales duplicados de EFE en otras capas.
 const esMemoriaActualizada=feat=>{
@@ -272,6 +268,7 @@ fetch('datos/vialidades_kmz_unificadas_polyline.json',{cache:'no-store'})
 .then(data=>{
  for(const [rol,segments] of Object.entries(data.polylines||{})){
   // Se conserva la Ruta 5 dentro del conjunto vial, sin añadir trazados base duplicados.
+  if(rol==='G-500')continue; // El KMZ aportado se carga íntegro como capa propia.
   const label=rol==='G-555'?'Ruta cerros camino a Angostura':rol==='G-500'?'Ruta Camino Abrantes-Peralillo':rol==='G-45-H'?'Camino Padre Hurtado · G-45-H':rol==='Ruta 79'?'Acceso Sur · Ruta 79':rol;
   const f={type:'Feature',properties:{id:'VIAL-'+rol,nombre:label,categoria:'Vías consolidadas',rol,fuente:'VIALIDADES (2).zip'},geometry:{type:'MultiLineString',coordinates:segments.map(decodeRuta)}};
   if(rol==='Ruta 5'||rol==='G-45-H'){
@@ -283,6 +280,10 @@ fetch('datos/vialidades_kmz_unificadas_polyline.json',{cache:'no-store'})
  }
 })
 .catch(err=>{console.warn('Vialidades KMZ:',err);const el=document.getElementById('roadsLayers');if(el)el.textContent='No se pudieron cargar los caminos. Actualiza la página.'});
+fetch('datos/ruta_g500_kmz.geojson',{cache:'no-store'})
+.then(r=>r.ok?r.json():Promise.reject(Error('No se pudo cargar la ruta G-500')))
+.then(g=>register('via-G-500','Ruta Camino Abrantes-Peralillo · G-500',g,{color:ROAD_COLOR,weight:4,opacity:.96},null,false,'roadsLayers'))
+.catch(err=>console.warn('Ruta G-500 KMZ:',err));
 // Cinco áreas del Plan Regulador Metropolitano de Santiago, desde los KMZ/KML aportados.
 // Geometrías visuales generalizadas: consultar KML originales para los deslindes oficiales.
 const PRMS_AREAS={
@@ -467,17 +468,23 @@ window.verCauce=(id)=>{
  if(input)input.checked=true;
  syncAllHydro();
  entry.layer.addTo(map);
- zoomLayer(entry.layer);
+ if(id==='rio-angostura'){const shape=entry.layer.getLayers?.()[0];if(shape)selected(shape);}else zoomLayer(entry.layer);
 };
-fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
-.then(r=>r.ok?r.json():Promise.reject(Error('No se descargaron los cauces')))
-.then(g=>{
+Promise.all([
+ fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(Error('No se descargaron los cauces'))),
+ fetch('datos/rio_angostura_kmz.geojson',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(Error('No se descargó la delimitación KMZ del Río Angostura')))
+])
+.then(([g,river])=>{
+ if(!river.features?.length||river.features[0].geometry?.type!=='Polygon')throw Error('KMZ del Río Angostura inválido');
+ // Sustituir completamente la representación previa, sin conservar sus segmentos incorrectos.
+ g.features=g.features.filter(f=>f.properties?.id!=='rio-angostura');
+ for(const f of river.features){f.properties={...f.properties,id:'rio-angostura',nombre:'Río Angostura',categoria:'Hidrografía · delimitación KMZ'};g.features.push(f);}
   if(!g.cauces?.length||!g.features?.length)throw Error('La capa de cauces está vacía');
   for(const [i,item] of g.cauces.entries()){
     const collection={type:'FeatureCollection',features:g.features.filter(f=>f.properties?.id===item.id)};
     if(!collection.features.length)continue;
     const color=hydroColors[i%hydroColors.length];
-    const style={color,weight:4,opacity:.98};
+    const style=item.id==='rio-angostura' ? {color:CYAN_WATER,weight:3,opacity:1,fillColor:CYAN_WATER,fillOpacity:.2} : {color,weight:4,opacity:.98};
     const layer=lay(collection,style);
     layerMap['hidro-'+item.id]={layer,name:item.nombre,visible:false,desc:item.descripcion_geo};
     // El panel izquierdo conserva la voz narrativa; la ficha derecha NO la repite.
@@ -495,7 +502,7 @@ fetch('datos/cauces_paine_individuales.geojson',{cache:'no-store'})
     const controls=document.createElement('div');controls.className='water-controls';
     const label=document.createElement('label');label.className='water-label';
     const check=document.createElement('input');check.type='checkbox';check.id='hydro-check-'+item.id;check.checked=false;
-    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);if(!BULK_MODE)zoomLayer(layer);}else{map.removeLayer(layer)}syncAllHydro();});
+    check.addEventListener('change',()=>{if(check.checked){layer.addTo(map);if(item.id==='rio-angostura'){const shape=layer.getLayers?.()[0];if(shape)selected(shape);}else if(!BULK_MODE)zoomLayer(layer);}else{map.removeLayer(layer)}syncAllHydro();});
     label.appendChild(check);label.appendChild(document.createTextNode('Mostrar en el mapa'));
     const zoom=document.createElement('button');zoom.className='zoom';zoom.type='button';zoom.textContent='⌖ Acercar';zoom.addEventListener('click',()=>window.verCauce(item.id));
     controls.appendChild(label);controls.appendChild(zoom);body.appendChild(controls);detail.appendChild(body);hydroList.appendChild(detail);
