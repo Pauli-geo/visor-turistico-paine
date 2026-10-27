@@ -152,7 +152,7 @@ const photoIndex=await fetch('contenidos/fotografias_hitos.json',{cache:'no-stor
 window.FOTOS_HITOS=photoIndex.fotos||{};
 document.querySelectorAll('img[data-photo]').forEach(img=>{let uri=window.VISOR_ASSETS[img.dataset.photo];if(uri){img.src=uri}else{img.alt=img.alt+' (imagen pendiente)'}});
 status.textContent='Capas y fichas municipales cargadas. Selecciona lugares y activa capas en el panel derecho.';
-const script=document.createElement('script');script.src='visor.js?v=20261027-rio-g500-16';document.body.appendChild(script);
+const script=document.createElement('script');script.src='visor.js?v=20261027-rio-g500-17';document.body.appendChild(script);
 }catch(err){console.error(err);status.textContent='Error de carga: '+err.message+'. Abre la página desde GitHub Pages y actualiza Ctrl+F5.'}
 })();
 </script></body></html>
